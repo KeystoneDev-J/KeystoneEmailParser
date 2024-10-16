@@ -17,19 +17,19 @@ patterns:
   
   Insured Information:
     Name: '(?i)(?:Insured\s*)?Name\s*:?\s*(.*?)\s*(?=\n|$)'
-    Contact #: '(?i)(?:Contact|Phone)\s*(?:#|Number)\s*:?\s*(\+?1?[\s.-]?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4})'
+    Contact:  '(?i)(?:Contact|Phone)\s*(?:#|Number)\s*:?\s*(\+?1?[\s.-]?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4})'
     Loss Address: '(?i)(?:Loss|Damaged?)\s*Address\s*:?\s*(.*?)\s*(?=\n|$)'
     Public Adjuster: '(?i)Public\s*Adjuster\s*:?\s*(.*?)\s*(?=\n|$)'
     Owner or Tenant: '(?i)(?:Is\s*the\s*insured\s*an?\s*)?Owner\s*or\s*(?:a\s*)?Tenant\s*(?:of\s*the\s*loss\s*location)?\s*:?\s*(Owner|Tenant|Yes|No)'
-
+  
   Adjuster Information:
     Adjuster Name: '(?i)Adjuster\s*Name\s*:?\s*(.*?)\s*(?=\n|$)'
     Adjuster Phone Number: '(?i)(?:Tel|Telephone|Cell|Mobile)\s*(?:Number|#)\s*:?\s*(\+?1?[\s.-]?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4})'
     Adjuster Email: '(?i)(?:Adjuster\s*)?Email\s*:?\s*([\w\.-]+@[\w\.-]+\.\w+)'
     Job Title: '(?i)(?:Job|Position)\s*Title\s*:?\s*(.*?)\s*(?=\n|$)'
     Address: '(?i)(?:Company|Office)?\s*Address\s*:?\s*(.*?)\s*(?=\n|$)'
-    Policy #: '(?i)Policy\s*(?:#|Number)\s*:?\s*(\w+)'
-
+    Policy: '(?i)Policy\s*(?:#|Number)\s*:?\s*(\w+)'
+  
   Assignment Information:
     Date of Loss/Occurrence: '(?i)Date\s*of\s*(?:Loss|Occurrence|Damage)\s*:?\s*(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\w+\s+\d{1,2},?\s*\d{4})'
     Cause of loss: '(?i)Cause\s*of\s*(?:loss|damage)\s*:?\s*(.*?)\s*(?=\n|$)'
@@ -59,24 +59,24 @@ additional_patterns:
     Insurance Company: '(?i)(?:Insurance|Carrier)\s*:?\s*(.*?)\s*(?=\n|$)'
     Handler: '(?i)(?:Claim|File)\s*(?:Handler|Manager)\s*:?\s*(.*?)\s*(?=\n|$)'
     Carrier Claim Number: '(?i)(?:File|Reference)\s*(?:Number|#)\s*:?\s*(\S+)'
-
+  
   Insured Information:
     Name: '(?i)(?:Claimant|Policyholder)\s*:?\s*(.*?)\s*(?=\n|$)'
-    Contact #: '(?i)(?:Tel|Telephone|Cell|Mobile)\s*:?\s*(\+?1?[\s.-]?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4})'
+    Contact:  '(?i)(?:Tel|Telephone|Cell|Mobile)\s*:?\s*(\+?1?[\s.-]?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4})'
     Loss Address: '(?i)(?:Property|Incident)\s*Address\s*:?\s*(.*?)\s*(?=\n|$)'
     Public Adjuster: '(?i)(?:PA|Pub\.\s*Adj\.)\s*:?\s*(.*?)\s*(?=\n|$)'
-
+  
   Adjuster Information:
     Adjuster Name: '(?i)(?:Assigned|Handling)\s*Adjuster\s*:?\s*(.*?)\s*(?=\n|$)'
     Adjuster Phone Number: '(?i)(?:Tel|Telephone|Cell|Mobile)\s*(?:Number|#)\s*:?\s*(\+?1?[\s.-]?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4})'
     Adjuster Email: '(?i)(?:E-?mail|Contact)\s*:?\s*([\w\.-]+@[\w\.-]+\.\w+)'
-
+  
   Assignment Information:
     Date of Loss/Occurrence: '(?i)(?:DOL|Loss\s*Date)\s*:?\s*(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\w+\s+\d{1,2},?\s*\d{4})'
     Cause of loss: '(?i)(?:Loss\s*Type|Peril)\s*:?\s*(.*?)\s*(?=\n|$)'
     Type: '(?i)(?:Claim|Loss)\s*Type\s*:?\s*(.*?)\s*(?=\n|$)'
     Inspection type: '(?i)(?:Inspection|Assessment)\s*(?:Type|Method)\s*:?\s*(.*?)\s*(?=\n|$)'
-
+  
   Additional details/Special Instructions:
     Additional details/Special Instructions: '(?i)(?:Notes|Comments|Remarks)\s*:?\s*(.*)'
 

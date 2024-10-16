@@ -18,8 +18,6 @@ class Config:
     # ----------------------------
     # Fuzzy Matching Threshold
     FUZZY_THRESHOLD = int(os.getenv('FUZZY_THRESHOLD', '90'))
-
-    # Known Values for Fuzzy Matching
     KNOWN_VALUES = {
         "Claim Number": [
             "ABC123",
@@ -86,53 +84,27 @@ class Config:
     # Boolean Values
     BOOLEAN_VALUES = {
         "positive": [
-            'yes',
-            'y',
-            'true',
-            't',
-            '1',
-            'x',
-            '[x]',
-            '[X]',
-            '(x)',
-            '(X)',
+            'yes', 'y', 'true', 't', '1', 'x', '[x]', '[X]', '(x)', '(X)',
         ],
         "negative": [
-            'no',
-            'n',
-            'false',
-            'f',
-            '0',
-            '[ ]',
-            '()',
-            '[N/A]',
-            '(N/A)',
+            'no', 'n', 'false', 'f', '0', '[ ]', '()', '[N/A]', '(N/A)',
         ],
     }
 
     # Valid File Extensions for Attachments
     VALID_EXTENSIONS = [
-        '.pdf',
-        '.docx',
-        '.xlsx',
-        '.zip',
-        '.png',
-        '.jpg',
-        '.jpeg',
-        '.gif',
-        '.txt',
-        '.csv',
+        '.pdf', '.docx', '.xlsx', '.zip', '.png', '.jpg', '.jpeg', '.gif', '.txt', '.csv',
     ]
 
     # URL Validation Setting
     URL_VALIDATION = {
-        "use_external_library": bool(os.getenv('URL_VALIDATION_USE_EXTERNAL_LIBRARY', 'true').lower() in ['true', '1', 'yes'])
+        "use_external_library": os.getenv('URL_VALIDATION_USE_EXTERNAL_LIBRARY', 'true').lower() in ['true', '1', 'yes']
     }
 
     # ----------------------------
     # Logging Configuration
     # ----------------------------
-    LOG_LEVEL = os.getenv('LOG_LEVEL', 'DEBUG')  # Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
+    LOG_LEVEL = os.getenv('LOG_LEVEL', 'DEBUG').upper()  # Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
 
     # ----------------------------
     # Load Configuration from YAML

@@ -31,13 +31,21 @@ class ConfigLoader:
             logger.error(f"Error parsing YAML configuration: {e}")
             raise
 
+        # Validate essential configuration sections
+        essential_sections = ['patterns', 'additional_patterns']
+        for section in essential_sections:
+            if section not in config:
+                logger.error(f"Missing essential configuration section: {section}")
+                raise KeyError(f"Missing essential configuration section: {section}")
+
         # Merge with additional configurations from config.py
         config['fuzzy_threshold'] = Config.FUZZY_THRESHOLD
-        config['known_values'] = Config.KNOWN_VALUES
+        config['known_values'] = Config.KNOWN_VALUES if hasattr(Config, 'KNOWN_VALUES') else {}
         config['date_formats'] = Config.DATE_FORMATS
         config['boolean_values'] = Config.BOOLEAN_VALUES
         config['valid_extensions'] = Config.VALID_EXTENSIONS
         config['url_validation'] = Config.URL_VALIDATION
+        config['log_level'] = Config.LOG_LEVEL
 
         logger.debug(f"Merged configuration: {config}")
         return config
