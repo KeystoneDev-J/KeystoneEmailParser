@@ -1,6 +1,5 @@
 import logging
 from typing import Optional, Dict, Any, List
-import signal
 import os
 from transformers import pipeline
 from huggingface_hub import login
@@ -8,6 +7,7 @@ from thefuzz import fuzz
 from dateutil import parser as dateutil_parser
 import phonenumbers
 from phonenumbers import PhoneNumberFormat
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 
 from src.parsers.base_parser import BaseParser
 from src.utils.validation import validate_json
@@ -16,11 +16,14 @@ from src.utils.quickbase_schema import QUICKBASE_SCHEMA
 
 LLM_TIMEOUT_SECONDS = 5
 
+
 class TimeoutException(Exception):
     pass
 
-def llm_timeout_handler(signum, frame):
+
+def llm_timeout_handler():
     raise TimeoutException("LLM processing timed out.")
+
 
 class EnhancedParser(BaseParser):
     def __init__(self, logger: Optional[logging.Logger] = None):
@@ -43,7 +46,9 @@ class EnhancedParser(BaseParser):
             self.logger.info("Loaded NER model 'dslim/bert-base-NER' successfully.")
         except Exception as e:
             self.logger.error(f"Failed to load NER model 'dslim/bert-base-NER': {e}")
-            raise RuntimeError(f"Failed to load NER model 'dslim/bert-base-NER': {e}") from e
+            raise RuntimeError(
+                f"Failed to load NER model 'dslim/bert-base-NER': {e}"
+            ) from e
 
     def init_layout_aware(self):
         try:
@@ -52,10 +57,16 @@ class EnhancedParser(BaseParser):
                 model="microsoft/layoutlmv3-base",
                 tokenizer="microsoft/layoutlmv3-base",
             )
-            self.logger.info("Loaded Layout-Aware model 'microsoft/layoutlmv3-base' successfully.")
+            self.logger.info(
+                "Loaded Layout-Aware model 'microsoft/layoutlmv3-base' successfully."
+            )
         except Exception as e:
-            self.logger.error(f"Failed to load Layout-Aware model 'microsoft/layoutlmv3-base': {e}")
-            raise RuntimeError(f"Failed to load Layout-Aware model 'microsoft/layoutlmv3-base': {e}") from e
+            self.logger.error(
+                f"Failed to load Layout-Aware model 'microsoft/layoutlmv3-base': {e}"
+            )
+            raise RuntimeError(
+                f"Failed to load Layout-Aware model 'microsoft/layoutlmv3-base': {e}"
+            ) from e
 
     def init_sequence_model(self):
         try:
@@ -64,18 +75,26 @@ class EnhancedParser(BaseParser):
                 model="facebook/bart-large",
                 tokenizer="facebook/bart-large",
             )
-            self.logger.info("Loaded Sequence Model 'facebook/bart-large' successfully.")
+            self.logger.info(
+                "Loaded Sequence Model 'facebook/bart-large' successfully."
+            )
         except Exception as e:
-            self.logger.error(f"Failed to load Sequence Model 'facebook/bart-large': {e}")
-            raise RuntimeError(f"Failed to load Sequence Model 'facebook/bart-large': {e}") from e
+            self.logger.error(
+                f"Failed to load Sequence Model 'facebook/bart-large': {e}"
+            )
+            raise RuntimeError(
+                f"Failed to load Sequence Model 'facebook/bart-large': {e}"
+            ) from e
 
     def init_validation_model(self):
         try:
             # Retrieve the token from environment variables
             hf_token = os.getenv("HF_TOKEN")
             if not hf_token:
-                raise ValueError("Hugging Face token not found in environment variables.")
-            
+                raise ValueError(
+                    "Hugging Face token not found in environment variables."
+                )
+
             # Login to Hugging Face Hub
             login(token=hf_token)
             self.logger.info("Logged in to Hugging Face Hub successfully.")
@@ -85,23 +104,43 @@ class EnhancedParser(BaseParser):
                 model="meta-llama/Meta-Llama-3-8B-Instruct",
                 tokenizer="meta-llama/Meta-Llama-3-8B-Instruct",
             )
-            self.logger.info("Loaded Validation Model 'meta-llama/Meta-Llama-3-8B-Instruct' successfully.")
+            self.logger.info(
+                "Loaded Validation Model 'meta-llama/Meta-Llama-3-8B-Instruct' successfully."
+            )
         except Exception as e:
-            self.logger.error(f"Failed to load Validation Model 'meta-llama/Meta-Llama-3-8B-Instruct': {e}")
-            raise RuntimeError(f"Failed to load Validation Model 'meta-llama/Meta-Llama-3-8B-Instruct': {e}") from e
+            self.logger.error(
+                f"Failed to load Validation Model 'meta-llama/Meta-Llama-3-8B-Instruct': {e}"
+            )
+            raise RuntimeError(
+                f"Failed to load Validation Model 'meta-llama/Meta-Llama-3-8B-Instruct': {e}"
+            ) from e
 
     def parse(self, email_content: str) -> Dict[str, Any]:
         self.logger.info("Starting parsing process.")
         parsed_data: Dict[str, Any] = {}
 
         try:
+            self.logger.info("Stage 1: NER Parsing.")
             parsed_data.update(self._stage_ner_parsing(email_content))
+
+            self.logger.info("Stage 2: Layout-Aware Parsing.")
             parsed_data.update(self._stage_layout_aware_parsing(email_content))
+
+            self.logger.info("Stage 3: Sequence Model Parsing.")
             parsed_data.update(self._stage_sequence_model_parsing(email_content))
+
+            self.logger.info("Stage 4: Validation Parsing.")
             parsed_data.update(self._stage_validation(email_content, parsed_data))
+
+            self.logger.info("Stage 5: Schema Validation.")
             self._stage_schema_validation(parsed_data)
+
+            self.logger.info("Stage 6: Post Processing.")
             parsed_data = self._stage_post_processing(parsed_data)
+
+            self.logger.info("Stage 7: JSON Validation.")
             self._stage_json_validation(parsed_data)
+
             self.logger.info("Parsing process completed successfully.")
             return parsed_data
 
@@ -124,28 +163,29 @@ class EnhancedParser(BaseParser):
         return layout_data
 
     def _stage_sequence_model_parsing(self, email_content: str) -> Dict[str, Any]:
-        if hasattr(signal, "SIGALRM"):
-            signal.signal(signal.SIGALRM, llm_timeout_handler)
-            signal.alarm(LLM_TIMEOUT_SECONDS)
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(
+                self.sequence_model_pipeline,
+                email_content,
+                max_length=150,
+                min_length=40,
+                do_sample=False,
+            )
+            try:
+                summary = future.result(timeout=LLM_TIMEOUT_SECONDS)
+                summary_text = summary[0]["summary_text"]
+                extracted_sequence = self.sequence_model_extract(summary_text)
+                return extracted_sequence
+            except TimeoutError:
+                self.logger.warning("Sequence Model parsing timed out.")
+                return {}
+            except Exception as e:
+                self.logger.error(f"Error during Sequence Model parsing: {e}")
+                return {}
 
-        try:
-            summary = self.sequence_model_pipeline(email_content, max_length=150, min_length=40, do_sample=False)
-            summary_text = summary[0]['summary_text']
-            extracted_sequence = self.sequence_model_extract(summary_text)
-            if hasattr(signal, "alarm"):
-                signal.alarm(0)
-            return extracted_sequence
-        except TimeoutException:
-            self.logger.warning("Sequence Model parsing timed out.")
-            return {}
-        except Exception as e:
-            self.logger.error(f"Error during Sequence Model parsing: {e}")
-            return {}
-        finally:
-            if hasattr(signal, "alarm"):
-                signal.alarm(0)
-
-    def _stage_validation(self, email_content: str, parsed_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _stage_validation(
+        self, email_content: str, parsed_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         validation_data = self.validation_parsing(email_content, parsed_data)
         return validation_data
 
@@ -157,15 +197,29 @@ class EnhancedParser(BaseParser):
                 label = entity.get("entity_group")
                 text = entity.get("word")
                 if label and text:
-                    if label.lower() in ["name", "organization"]:
-                        extracted_entities.setdefault("Insured Information", {}).setdefault("Name", []).append(text)
-                    elif label.lower() == "date":
-                        extracted_entities.setdefault("Assignment Information", {}).setdefault("Date of Loss/Occurrence", []).append(text)
-                    elif label.lower() in ["claim_number", "policy_number"]:
-                        field = "Carrier Claim Number" if label.lower() == "claim_number" else "Policy #"
-                        extracted_entities.setdefault("Requesting Party", {}).setdefault(field, []).append(text)
-                    elif label.lower() == "email":
-                        extracted_entities.setdefault("Adjuster Information", {}).setdefault("Adjuster Email", []).append(text)
+                    label_lower = label.lower()
+                    if label_lower in ["name", "organization"]:
+                        extracted_entities.setdefault(
+                            "Insured Information", {}
+                        ).setdefault("Name", []).append(text)
+                    elif label_lower == "date":
+                        extracted_entities.setdefault(
+                            "Assignment Information", {}
+                        ).setdefault("Date of Loss/Occurrence", []).append(text)
+                    elif label_lower in ["claim_number", "policy_number"]:
+                        field = (
+                            "Carrier Claim Number"
+                            if label_lower == "claim_number"
+                            else "Policy #"
+                        )
+                        extracted_entities.setdefault(
+                            "Requesting Party", {}
+                        ).setdefault(field, []).append(text)
+                    elif label_lower == "email":
+                        extracted_entities.setdefault(
+                            "Adjuster Information", {}
+                        ).setdefault("Adjuster Email", []).append(text)
+            self.logger.debug(f"NER Parsing Result: {extracted_entities}")
             return extracted_entities
         except Exception as e:
             self.logger.error(f"Error during NER parsing: {e}")
@@ -179,10 +233,16 @@ class EnhancedParser(BaseParser):
                 label = entity.get("entity_group")
                 text = entity.get("word")
                 if label and text:
-                    if label.lower() in ["address", "location"]:
-                        extracted_layout.setdefault("Insured Information", {}).setdefault("Loss Address", []).append(text)
-                    elif label.lower() in ["damage", "cost"]:
-                        extracted_layout.setdefault("Assignment Information", {}).setdefault("Loss Description", []).append(text)
+                    label_lower = label.lower()
+                    if label_lower in ["address", "location"]:
+                        extracted_layout.setdefault(
+                            "Insured Information", {}
+                        ).setdefault("Loss Address", []).append(text)
+                    elif label_lower in ["damage", "cost"]:
+                        extracted_layout.setdefault(
+                            "Assignment Information", {}
+                        ).setdefault("Loss Description", []).append(text)
+            self.logger.debug(f"Layout-Aware Parsing Result: {extracted_layout}")
             return extracted_layout
         except Exception as e:
             self.logger.error(f"Error during Layout-Aware parsing: {e}")
@@ -191,20 +251,25 @@ class EnhancedParser(BaseParser):
     def sequence_model_extract(self, summary_text: str) -> Dict[str, Any]:
         extracted_sequence: Dict[str, Any] = {}
         try:
-            for item in summary_text.split(','):
-                if ':' in item:
-                    key, value = item.split(':', 1)
+            for item in summary_text.split(","):
+                if ":" in item:
+                    key, value = item.split(":", 1)
                     key = key.strip()
                     value = value.strip()
                     for section, fields in QUICKBASE_SCHEMA.items():
                         if key in fields:
-                            extracted_sequence.setdefault(section, {}).setdefault(key, []).append(value)
+                            extracted_sequence.setdefault(section, {}).setdefault(
+                                key, []
+                            ).append(value)
+            self.logger.debug(f"Sequence Model Extraction Result: {extracted_sequence}")
             return extracted_sequence
         except Exception as e:
             self.logger.error(f"Error during Sequence Model extraction: {e}")
             return {}
 
-    def validation_parsing(self, email_content: str, parsed_data: Dict[str, Any]) -> Dict[str, Any]:
+    def validation_parsing(
+        self, email_content: str, parsed_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         try:
             prompt = (
                 f"Validate the following extracted data against the original email content. "
@@ -213,25 +278,32 @@ class EnhancedParser(BaseParser):
                 f"Extracted Data:\n{parsed_data}\n\n"
                 f"Provide a list of any missing or inconsistent fields."
             )
-            validation_response = self.validation_pipeline(prompt, max_length=500, do_sample=False)
-            validation_text = validation_response[0]['generated_text']
-            issues = self.parse_validation_response(validation_text)
-            if issues:
-                parsed_data["validation_issues"] = issues
-            return {}
-        except TimeoutException:
-            self.logger.warning("Validation Model parsing timed out.")
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(
+                    self.validation_pipeline, prompt, max_length=500, do_sample=False
+                )
+                try:
+                    validation_response = future.result(timeout=LLM_TIMEOUT_SECONDS)
+                    validation_text = validation_response[0]["generated_text"]
+                    issues = self.parse_validation_response(validation_text)
+                    if issues:
+                        parsed_data["validation_issues"] = issues
+                except TimeoutError:
+                    self.logger.warning("Validation Model parsing timed out.")
+                except Exception as e:
+                    self.logger.error(f"Error during Validation Model parsing: {e}")
             return {}
         except Exception as e:
-            self.logger.error(f"Error during Validation Model parsing: {e}")
+            self.logger.error(f"Error in validation_parsing: {e}")
             return {}
 
     def parse_validation_response(self, validation_text: str) -> List[str]:
         issues = []
-        lines = validation_text.strip().split('\n')
+        lines = validation_text.strip().split("\n")
         for line in lines:
             if line.strip():
                 issues.append(line.strip())
+        self.logger.debug(f"Validation Issues: {issues}")
         return issues
 
     def _stage_schema_validation(self, parsed_data: Dict[str, Any]):
@@ -252,7 +324,9 @@ class EnhancedParser(BaseParser):
                         key=lambda x: fuzz.partial_ratio(x.lower(), value.lower()),
                         default=None,
                     )
-                    if best_match and fuzz.partial_ratio(best_match.lower(), value.lower()) >= self.config.get("fuzzy_threshold", 90):
+                    if best_match and fuzz.partial_ratio(
+                        best_match.lower(), value.lower()
+                    ) >= self.config.get("fuzzy_threshold", 90):
                         parsed_data[section][field] = best_match
                     else:
                         inconsistent_fields.append(f"{section} -> {field}")
@@ -265,7 +339,11 @@ class EnhancedParser(BaseParser):
         if inconsistent_fields:
             parsed_data["inconsistent_fields"] = inconsistent_fields
 
-    def post_processing(self, parsed_data: Dict[str, Any]) -> Dict[str, Any]:
+        self.logger.debug(
+            f"Schema Validation - Missing Fields: {missing_fields}, Inconsistent Fields: {inconsistent_fields}"
+        )
+
+    def _stage_post_processing(self, parsed_data: Dict[str, Any]) -> Dict[str, Any]:
         skip_sections = [
             "TransformerEntities",
             "Entities",
@@ -293,12 +371,19 @@ class EnhancedParser(BaseParser):
                 text = entity.get("text", "").strip()
                 confidence = entity.get("confidence", 0.0)
                 if "policy" in text.lower():
-                    parsed_data.setdefault("Adjuster Information", {}).setdefault("Policy #", []).append(text)
+                    parsed_data.setdefault("Adjuster Information", {}).setdefault(
+                        "Policy #", []
+                    ).append(text)
 
-        attachments = parsed_data.get("Assignment Information", {}).get("Attachment(s)", [])
+        attachments = parsed_data.get("Assignment Information", {}).get(
+            "Attachment(s)", []
+        )
         if attachments and not self.verify_attachments(attachments):
-            parsed_data["user_notifications"] = "Attachments mentioned but not found in the email."
+            parsed_data["user_notifications"] = (
+                "Attachments mentioned but not found in the email."
+            )
 
+        self.logger.debug(f"Post Processing Result: {parsed_data}")
         return parsed_data
 
     def format_date(self, date_str: str) -> str:
@@ -331,4 +416,22 @@ class EnhancedParser(BaseParser):
             return "N/A"
 
     def verify_attachments(self, attachments: List[str]) -> bool:
+        # Implement actual verification logic as needed
         return True
+
+    def _stage_json_validation(self, parsed_data: Dict[str, Any]):
+        # Implement JSON schema validation if necessary
+        try:
+            validate_json(parsed_data)
+            self.logger.info("JSON validation passed.")
+        except Exception as e:
+            self.logger.error(f"JSON validation failed: {e}")
+            parsed_data["validation_issues"] = parsed_data.get(
+                "validation_issues", []
+            ) + [str(e)]
+
+    # Adding parse_email method to maintain interface with app.py
+    def parse_email(
+        self, email_content: str, parser_option: Any = None
+    ) -> Dict[str, Any]:
+        return self.parse(email_content)
