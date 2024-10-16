@@ -1,7 +1,9 @@
 import logging
 from typing import Optional, Dict, Any, List
 import signal
+import os
 from transformers import pipeline
+from huggingface_hub import login
 from thefuzz import fuzz
 from dateutil import parser as dateutil_parser
 import phonenumbers
@@ -69,15 +71,24 @@ class EnhancedParser(BaseParser):
 
     def init_validation_model(self):
         try:
+            # Retrieve the token from environment variables
+            hf_token = os.getenv("HF_TOKEN")
+            if not hf_token:
+                raise ValueError("Hugging Face token not found in environment variables.")
+            
+            # Login to Hugging Face Hub
+            login(token=hf_token)
+            self.logger.info("Logged in to Hugging Face Hub successfully.")
+
             self.validation_pipeline = pipeline(
                 "text-generation",
-                model="meta-llama/Llama-2-7b",
-                tokenizer="meta-llama/Llama-2-7b",
+                model="meta-llama/Meta-Llama-3-8B-Instruct",
+                tokenizer="meta-llama/Meta-Llama-3-8B-Instruct",
             )
-            self.logger.info("Loaded Validation Model 'meta-llama/Llama-2-7b' successfully.")
+            self.logger.info("Loaded Validation Model 'meta-llama/Meta-Llama-3-8B-Instruct' successfully.")
         except Exception as e:
-            self.logger.error(f"Failed to load Validation Model 'meta-llama/Llama-2-7b': {e}")
-            raise RuntimeError(f"Failed to load Validation Model 'meta-llama/Llama-2-7b': {e}") from e
+            self.logger.error(f"Failed to load Validation Model 'meta-llama/Meta-Llama-3-8B-Instruct': {e}")
+            raise RuntimeError(f"Failed to load Validation Model 'meta-llama/Meta-Llama-3-8B-Instruct': {e}") from e
 
     def parse(self, email_content: str) -> Dict[str, Any]:
         self.logger.info("Starting parsing process.")
@@ -195,7 +206,13 @@ class EnhancedParser(BaseParser):
 
     def validation_parsing(self, email_content: str, parsed_data: Dict[str, Any]) -> Dict[str, Any]:
         try:
-            prompt = f"Validate the following extracted data against the original email content. Ensure all fields are consistent and complete.\n\nEmail Content:\n{email_content}\n\nExtracted Data:\n{parsed_data}\n\nProvide a list of any missing or inconsistent fields."
+            prompt = (
+                f"Validate the following extracted data against the original email content. "
+                f"Ensure all fields are consistent and complete.\n\n"
+                f"Email Content:\n{email_content}\n\n"
+                f"Extracted Data:\n{parsed_data}\n\n"
+                f"Provide a list of any missing or inconsistent fields."
+            )
             validation_response = self.validation_pipeline(prompt, max_length=500, do_sample=False)
             validation_text = validation_response[0]['generated_text']
             issues = self.parse_validation_response(validation_text)

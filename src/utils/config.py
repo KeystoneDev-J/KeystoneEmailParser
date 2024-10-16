@@ -1,23 +1,18 @@
 # src/utils/config.py
 
 import os
-import yaml
 import logging
 
 class Config:
     """Configuration settings."""
 
     # ----------------------------
-    # General Configuration
-    # ----------------------------
-    # Path to the YAML configuration file
-    CONFIG_FILE_PATH = os.getenv('CONFIG_FILE_PATH', 'src/parsers/parser_config.yaml')
-
-    # ----------------------------
     # Enhanced Parser Configuration
     # ----------------------------
     # Fuzzy Matching Threshold
     FUZZY_THRESHOLD = int(os.getenv('FUZZY_THRESHOLD', '90'))
+    
+    # Known Values for Fuzzy Matching
     KNOWN_VALUES = {
         "Claim Number": [
             "ABC123",
@@ -107,26 +102,25 @@ class Config:
     LOG_LEVEL = os.getenv('LOG_LEVEL', 'DEBUG').upper()  # Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
 
     # ----------------------------
-    # Load Configuration from YAML
+    # Load Configuration
     # ----------------------------
     @classmethod
-    def load_parser_config(cls) -> dict:
+    def load_config(cls) -> dict:
         """
-        Load parser configurations from the YAML file.
+        Load configuration settings.
 
         Returns:
-            dict: Parsed configuration.
+            dict: Configuration settings.
         """
         logger = logging.getLogger("Config")
-        config = {}
-        try:
-            with open(cls.CONFIG_FILE_PATH, 'r', encoding='utf-8') as file:
-                config = yaml.safe_load(file)
-            logger.info(f"Loaded parser configuration from {cls.CONFIG_FILE_PATH}.")
-        except FileNotFoundError:
-            logger.error(f"Configuration file {cls.CONFIG_FILE_PATH} not found.")
-            raise
-        except yaml.YAMLError as e:
-            logger.error(f"Error parsing YAML configuration: {e}")
-            raise
+        config = {
+            "fuzzy_threshold": cls.FUZZY_THRESHOLD,
+            "known_values": cls.KNOWN_VALUES,
+            "date_formats": cls.DATE_FORMATS,
+            "boolean_values": cls.BOOLEAN_VALUES,
+            "valid_extensions": cls.VALID_EXTENSIONS,
+            "url_validation": cls.URL_VALIDATION,
+            "log_level": cls.LOG_LEVEL,
+        }
+        logger.info("Loaded configuration from Config class variables.")
         return config
