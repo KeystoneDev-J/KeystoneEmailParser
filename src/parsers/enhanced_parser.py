@@ -187,11 +187,11 @@ class EnhancedParser:
             if section in QUICKBASE_SCHEMA:
                 for field, value in fields.items():
                     if field in QUICKBASE_SCHEMA[section]:
-                        quickbase_data.setdefault(section, {})[field] = value
+                        quickbase_data.setdefault(section, {}).setdefault(field, value)
                     else:
-                        additional_info.setdefault(section, {})[field] = value
+                        additional_info.setdefault(section, {}).setdefault(field, value)
             else:
-                additional_info.setdefault(section, fields)
+                additional_info.setdefault(section, {}).setdefault(field, value)
         return quickbase_data, additional_info
 
     def _merge_quickbase_and_additional(self, quickbase: Dict[str, Any], additional: Dict[str, Any]) -> Dict[str, Any]:
@@ -496,16 +496,35 @@ class SequenceModelExtractor:
             model_type="sequence",
             pipeline_type="summarization",
             model_name="facebook/bart-large",
-            tokenizer_name="facebook/bart-large"
+            tokenizer_name="facebook/bart-large",
+            truncation=True  # Enable truncation at the tokenizer level
         )
+        # Get the model's maximum input length
+        self.max_input_length = self.sequence_pipeline.tokenizer.model_max_length
+        self.logger.info(f"Sequence model loaded successfully with max_input_length={self.max_input_length}.")
 
     def extract(self, email_content: str) -> Dict[str, Any]:
         try:
             self.logger.debug("Generating summary with Sequence Model.")
-            summary = self.sequence_pipeline(email_content, max_length=150, min_length=40, do_sample=False)
+            # Tokenize and truncate the input if necessary
+            tokenizer = self.sequence_pipeline.tokenizer
+            encoding = tokenizer.encode_plus(
+                email_content,
+                max_length=self.max_input_length,
+                truncation=True,
+                return_tensors="pt"
+            )
+            truncated_content = tokenizer.decode(encoding["input_ids"][0], skip_special_tokens=True)
+            if len(tokenizer.encode(truncated_content)) < len(tokenizer.encode(email_content)):
+                self.logger.warning("Email content was truncated to fit the model's maximum input length.")
+
+            summary = self.sequence_pipeline(truncated_content, max_length=150, min_length=40, do_sample=False)
             summary_text = summary[0].get("summary_text", "")
             self.logger.debug(f"Sequence Model summary: {summary_text}")
             return self._parse_summary(summary_text)
+        except IndexError as ie:
+            self.logger.error(f"Sequence Model extraction failed: {ie}", exc_info=True)
+            return {}
         except Exception as e:
             self.logger.error(f"Sequence Model extraction failed: {e}", exc_info=True)
             return {}
@@ -649,8 +668,8 @@ class DataValidator:
         )
 
     def validate(self, email_content: str, merged_data: Dict[str, Any]):
+        self.logger.debug("Running Validation pipeline.")
         try:
-            self.logger.debug("Running Validation pipeline.")
             self._validate_fields(merged_data)
             self._validate_schema(merged_data)
             self._validate_json(merged_data)
@@ -705,3 +724,4 @@ class DataValidator:
         except Exception as e:
             self.logger.error(f"JSON validation failed: {e}", exc_info=True)
             merged_data.setdefault("validation_issues", []).append(str(e))
+

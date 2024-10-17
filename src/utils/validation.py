@@ -3,6 +3,7 @@
 import jsonschema
 from jsonschema import Draft7Validator
 import logging
+
 from src.utils.config_loader import ConfigLoader
 
 # Load configuration
@@ -52,10 +53,16 @@ assignment_schema = {
                 "Facts of Loss": {"type": ["string", "null"]},
                 "Loss Description": {"type": ["string", "null"]},
                 "Residence Occupied During Loss": {"type": ["string", "boolean", "null"]},
-                "Was Someone home at time of damage": {"type": ["string", "boolean", "null"]},
+                "Was Someone Home at Time of Damage": {"type": ["string", "boolean", "null"]},
                 "Repair or Mitigation Progress": {"type": ["string", "null"]},
                 "Type": {"type": ["string", "null"]},
                 "Inspection type": {"type": ["string", "null"]},
+                "Assignment Type": {"type": ["string", "null"]},
+                "Additional details/Special Instructions": {"type": ["string", "null"]},
+                "Attachment(s)": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                },
             },
             "required": [
                 "Date of Loss/Occurrence",
@@ -63,34 +70,14 @@ assignment_schema = {
                 "Facts of Loss",
                 "Loss Description",
                 "Residence Occupied During Loss",
-                "Was Someone home at time of damage",
+                "Was Someone Home at Time of Damage",
                 "Repair or Mitigation Progress",
                 "Type",
                 "Inspection type",
+                "Assignment Type",
+                "Additional details/Special Instructions",
+                "Attachment(s)",
             ],
-        },
-        "Assignment Type": {
-            "type": "object",
-            "properties": {
-                "Wind": {"type": ["boolean", "null"]},
-                "Structural": {"type": ["boolean", "null"]},
-                "Hail": {"type": ["boolean", "null"]},
-                "Foundation": {"type": ["boolean", "null"]},
-                "Other": {
-                    "type": "object",
-                    "properties": {
-                        "Checked": {"type": ["boolean", "null"]},
-                        "Details": {"type": ["string", "null"]},
-                    },
-                    "required": ["Checked", "Details"],
-                },
-            },
-            "required": ["Wind", "Structural", "Hail", "Foundation", "Other"],
-        },
-        "Additional details/Special Instructions": {"type": ["string", "null"]},
-        "Attachment(s)": {
-            "type": "array",
-            "items": {"type": "string"},
         },
         "Entities": {
             "type": "object",
@@ -124,9 +111,6 @@ assignment_schema = {
         "Insured Information",
         "Adjuster Information",
         "Assignment Information",
-        "Assignment Type",
-        "Additional details/Special Instructions",
-        "Attachment(s)",
         "Entities",
         "TransformerEntities",
     ],

@@ -1,162 +1,146 @@
-# app.py
-
-import os
+from fastapi import FastAPI, Request
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
 import logging
-import json_log_formatter
-from flask import Flask, render_template, request, jsonify, send_from_directory
+import os
+from starlette.staticfiles import StaticFiles
 from src.parsers.enhanced_parser import EnhancedParser
-from dotenv import load_dotenv
 
-print("Starting imports...")
-
-print("Flask imported successfully")
-print("All imports completed")
-
-print("Initializing app...")
-
-# Load environment variables from .env file
-load_dotenv()
-print(".env file loaded")
-
-app = Flask(__name__)
-print("Flask app created")
+from contextlib import asynccontextmanager
+import uvicorn
 
 # ----------------------------
-# Centralized Logging Setup
+# Logging Configuration
 # ----------------------------
 
-def create_logger():
-    logger = logging.getLogger("KeystoneEmailParser")
-    logger.setLevel(logging.DEBUG)  # Set to desired level
-
-    # Create JSON formatter
-    formatter = json_log_formatter.JSONFormatter()
-
-    # Create StreamHandler with JSON formatter
-    json_handler = logging.StreamHandler()
-    json_handler.setFormatter(formatter)
-
-    # Add handler to logger
-    if not logger.handlers:
-        logger.addHandler(json_handler)
-
-    return logger
-
-# Initialize centralized logger
-app.logger = create_logger()
-app.logger.info("Logger initialized and configured.")
+# Configure logging to output JSON-like formatted logs
+logging.basicConfig(
+    format='{"time": "%(asctime)s", "name": "%(name)s", "level": "%(levelname)s", "message": "%(message)s"}',
+    level=logging.INFO
+)
+logger = logging.getLogger("KeystoneEmailParser")
 
 # ----------------------------
-# Initialize EnhancedParser with centralized logger
+# Lifespan Context Manager
 # ----------------------------
 
-parser = EnhancedParser(logger=app.logger)
-app.logger.info("EnhancedParser initialized with centralized logger.")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Handles application startup and shutdown events.
 
-# ----------------------------
-# Flask Routes
-# ----------------------------
-
-@app.route("/", methods=["GET"])
-def index():
+    Initializes the EnhancedParser during startup and ensures graceful shutdown.
     """
-    Render the main page with the email parsing form.
-    """
-    app.logger.info("Rendering index page.")
-    return render_template("index.html")
-
-@app.route("/favicon.ico")
-def favicon():
-    """
-    Serve the favicon to prevent 404 errors.
-    """
-    favicon_path = os.path.join(app.root_path, "static", "favicon.ico")
-    if os.path.exists(favicon_path):
-        app.logger.info("Serving favicon.ico.")
-        return send_from_directory(
-            os.path.join(app.root_path, "static"),
-            "favicon.ico",
-            mimetype="image/vnd.microsoft.icon",
-        )
-    else:
-        app.logger.warning("favicon.ico not found in static directory.")
-        return jsonify({"error_message": "favicon.ico not found."}), 404
-
-@app.route("/parse_email", methods=["POST"])
-def parse_email_route():
-    """
-    Parse the email content and return the result.
-    """
+    # Startup Phase
+    logger.info("Application startup initiated.")
     try:
-        email_content = request.form.get("email_content", "").strip()
-
-        if not email_content:
-            app.logger.warning("Empty email content received.")
-            return jsonify({"error_message": "Please provide the email content to parse."}), 400
-
-        parsed_data = parser.parse_email(email_content)
-        app.logger.info("Email parsed successfully.")
-        return jsonify(parsed_data), 200
-
-    except ValueError as ve:
-        app.logger.warning(f"Invalid input: {ve}")
-        return jsonify({"error_message": str(ve)}), 400
+        # Initialize EnhancedParser
+        logger.info("Initializing EnhancedParser.")
+        app.state.parser = EnhancedParser()
+        logger.info("EnhancedParser initialized successfully.")
     except Exception as e:
-        app.logger.error(f"Error during parsing: {e}", exc_info=True)
-        return jsonify({"error_message": "An unexpected error occurred during parsing."}), 500
+        logger.critical(f"Failed to initialize EnhancedParser: {e}", exc_info=True)
+        raise
+    yield
+    # Shutdown Phase
+    logger.info("Shutting down EnhancedParser.")
+    try:
+        await app.state.parser.shutdown()
+        logger.info("EnhancedParser shut down successfully.")
+    except Exception as e:
+        logger.error(f"Error during EnhancedParser shutdown: {e}", exc_info=True)
 
 # ----------------------------
-# Error Handlers
+# FastAPI Application Initialization
 # ----------------------------
 
-@app.errorhandler(Exception)
-def handle_exception(e):
-    """
-    Global exception handler to catch and log unexpected errors.
-    """
-    app.logger.error(f"Unhandled exception: {e}", exc_info=True)
-    return jsonify({"error_message": "An internal error occurred."}), 500
-
-@app.errorhandler(404)
-def page_not_found(e):
-    """
-    Custom 404 error handler.
-    """
-    app.logger.warning(f"404 error: {request.url} not found.")
-    return jsonify({"error_message": "The requested URL was not found on the server."}), 404
+# Create the FastAPI app with the lifespan context manager
+app = FastAPI(lifespan=lifespan)
 
 # ----------------------------
-# Application Entry Point
+# Static Files Mounting
 # ----------------------------
 
-print("App initialized, about to start server...")
+# Mount static files directory with name 'static'
+# This enables usage of url_for('static', filename='...') in templates
+static_directory = os.path.join(os.path.dirname(__file__), "static")
+app.mount("/static", StaticFiles(directory=static_directory), name="static")
+logger.info(f"Static files directory mounted at '/static' from {static_directory}.")
+
+# ----------------------------
+# Templates Initialization
+# ----------------------------
+
+# Initialize Jinja2 templates
+templates_directory = os.path.join(os.path.dirname(__file__), "templates")
+templates = Jinja2Templates(directory=templates_directory)
+logger.info(f"Templates directory initialized at {templates_directory}.")
+
+# ----------------------------
+# Routes Definitions
+# ----------------------------
+
+@app.get("/", response_class=HTMLResponse)
+async def index(request: Request):
+    """
+    Renders the index.html template.
+
+    Args:
+        request (Request): The incoming request.
+
+    Returns:
+        HTMLResponse: The rendered HTML page.
+    """
+    logger.info("Rendering index page.")
+    # Verify if the template file exists
+    template_path = os.path.join(templates_directory, "index.html")
+    if not os.path.exists(template_path):
+        logger.critical(f"Template file not found at path: {template_path}")
+        return HTMLResponse("Template file not found", status_code=500)
+
+    try:
+        response = templates.TemplateResponse("index.html", {"request": request})
+        logger.info("index.html template successfully rendered.")
+        return response
+    except Exception as e:
+        logger.critical(f"Unhandled exception while rendering index page: {e}", exc_info=True)
+        raise
+
+# ----------------------------
+# Additional Routes (Optional)
+# ----------------------------
+
+# Example of an endpoint to handle email parsing
+# Uncomment and modify as per your actual implementation
+
+# @app.post("/parse-email", response_model=YourResponseModel)
+# async def parse_email_endpoint(request: Request, email_content: str):
+#     """
+#     Endpoint to parse email content.
+
+#     Args:
+#         request (Request): The incoming request.
+#         email_content (str): The raw email content to parse.
+
+#     Returns:
+#         YourResponseModel: The parsed data.
+#     """
+#     parser: EnhancedParser = request.app.state.parser
+#     parsed_data = await parser.parse_email(email_content)
+#     return parsed_data
+
+# ----------------------------
+# Main Entry Point
+# ----------------------------
 
 if __name__ == "__main__":
-    print("Starting Flask server...")
-    try:
-        # Optionally, get host and port from environment variables
-        host = os.getenv("HOST", "127.0.0.1")
-        port = int(os.getenv("PORT", 5000))
-
-        # Ensure that the 'static' directory exists for favicon
-        static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
-        if not os.path.exists(static_dir):
-            os.makedirs(static_dir)
-            app.logger.info(
-                f"Created 'static' directory at {static_dir}. Please add a favicon.ico file to this directory."
-            )
-
-        # Ensure that the 'templates' directory exists
-        templates_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
-        if not os.path.exists(templates_dir):
-            os.makedirs(templates_dir)
-            app.logger.info(
-                f"Created 'templates' directory at {templates_dir}. Please add necessary HTML templates."
-            )
-
-        print(f"About to start Flask app on {host}:{port}")
-        app.run(host=host, port=port, debug=True)  # Enable debug mode for development
-    except Exception as e:
-        print(f"Error starting Flask application: {e}")
-        app.logger.critical(f"Failed to start the Flask application: {e}", exc_info=True)
-        raise e
+    """
+    Runs the FastAPI application using Uvicorn.
+    """
+    # Read host and port from environment variables or use defaults
+    host = os.getenv("HOST", "127.0.0.1")
+    port = int(os.getenv("PORT", "8000"))
+    
+    # Start the Uvicorn server
+    uvicorn.run("app:app", host=host, port=port, log_level="info")

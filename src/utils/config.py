@@ -10,10 +10,13 @@ class ConfigLoader:
     @staticmethod
     def load_config() -> dict:
         """
-        Load configuration settings from the Config class.
+        Load and validate configuration settings from environment variables.
 
         Returns:
             dict: Configuration settings.
+
+        Raises:
+            SystemExit: If configuration validation fails.
         """
         logger = logging.getLogger("ConfigLoader")
         try:
@@ -50,6 +53,7 @@ class ConfigLoader:
             raise ValueError("log_level must be one of DEBUG, INFO, WARNING, ERROR, CRITICAL.")
 
         # Add more validations as needed based on the configuration structure
+
 
 class Config:
     """Configuration settings."""
@@ -256,7 +260,7 @@ class Config:
     @classmethod
     def load_config(cls) -> dict:
         """
-        Load configuration settings.
+        Load configuration settings from environment variables.
 
         Returns:
             dict: Configuration settings.
@@ -271,5 +275,5 @@ class Config:
             "url_validation": cls.URL_VALIDATION,
             "log_level": cls.LOG_LEVEL,
         }
-        logger.info("Loaded configuration from Config class variables.")
+        logger.info("Loaded configuration from environment variables.")
         return config
