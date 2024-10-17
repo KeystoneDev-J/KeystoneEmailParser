@@ -1,15 +1,28 @@
+print("Starting imports...")
 import os
 import logging
 import json_log_formatter
 from flask import Flask, render_template, request, jsonify, send_from_directory
+
+print("Flask imported successfully")
 from src.parsers.parser_options import ParserOption
+
+print("ParserOption imported successfully")
 from src.parsers.parser_registry import ParserRegistry
+
+print("ParserRegistry imported successfully")
 from dotenv import load_dotenv
+
+print("All imports completed")
+
+print("Initializing app...")
 
 # Load environment variables from .env file
 load_dotenv()
+print(".env file loaded")
 
 app = Flask(__name__)
+print("Flask app created")
 
 # ----------------------------
 # Centralized Logging Setup
@@ -61,20 +74,10 @@ def favicon():
 
 @app.route("/parse_email", methods=["POST"])
 def parse_email_route():
-    """
-    Handle the email parsing request.
-
-    Expects form data with:
-    - 'email_content': The raw email content to parse.
-    - 'parser_option': The selected parser option.
-
-    Returns:
-    - JSON response with parsed data or error messages.
-    """
     try:
         # Retrieve form data
         email_content = request.form.get("email_content", "").strip()
-        parser_option = request.form.get("parser_option", "").strip()
+        parser_option_str = request.form.get("parser_option", "").strip()
 
         # Input Validation
         if not email_content:
@@ -86,49 +89,47 @@ def parse_email_route():
                 400,
             )
 
-        if not parser_option:
+        if not parser_option_str:
             logger.warning("No parser option selected.")
             return jsonify({"error_message": "Please select a parser option."}), 400
 
+        logger.debug(f"Received email content: {email_content[:100]}...")
         logger.debug(
-            f"Received email content: {email_content[:100]}..."
-        )  # Log first 100 chars
-        logger.debug(
-            f"Raw parser_option value: {parser_option} ({type(parser_option)})"
+            f"Raw parser_option value: {parser_option_str} ({type(parser_option_str)})"
         )
 
         # Parse the parser_option into the Enum value
         try:
-            selected_parser_option = ParserOption(parser_option)
+            parser_option = ParserOption[parser_option_str.upper()]
             logger.debug(
-                f"Selected parser option Enum: {selected_parser_option} ({type(selected_parser_option)})"
+                f"Selected parser option Enum: {parser_option} ({type(parser_option)})"
             )
-        except ValueError:
-            logger.error(f"Invalid parser option selected: {parser_option}")
+        except KeyError:
+            logger.error(f"Invalid parser option selected: {parser_option_str}")
             return (
-                jsonify({"error_message": f"Invalid parser option: {parser_option}"}),
+                jsonify(
+                    {"error_message": f"Invalid parser option: {parser_option_str}"}
+                ),
                 400,
             )
 
         # Retrieve the appropriate parser from the registry
-        parser = ParserRegistry.get_parser(selected_parser_option)
+        parser = ParserRegistry.get_parser(parser_option)
         logger.info(
-            f"Using parser: {parser.__class__.__name__} for option: {selected_parser_option}"
+            f"Using parser: {parser.__class__.__name__} for option: {parser_option}"
         )
 
         # Parse the email content
-        parsed_data = parser.parse_email(email_content, selected_parser_option)
+        parsed_data = parser.parse_email(email_content, parser_option)
 
         logger.debug(f"Parsed data: {parsed_data}")
 
         return jsonify(parsed_data), 200
 
     except ValueError as ve:
-        # Handle known value errors (e.g., invalid parser option)
         logger.error(f"ValueError during parsing: {ve}")
         return jsonify({"error_message": str(ve)}), 400
     except Exception as e:
-        # Handle unexpected errors
         logger.error(f"Unexpected error during parsing: {e}", exc_info=True)
         return (
             jsonify({"error_message": "An unexpected error occurred during parsing."}),
@@ -171,7 +172,11 @@ def page_not_found(e):
 # Application Entry Point
 # ----------------------------
 
+print("App initialized, about to start server...")
+
+
 if __name__ == "__main__":
+    print("Starting Flask server...")
     try:
         # Optionally, get host and port from environment variables
         host = os.getenv("HOST", "127.0.0.1")
@@ -185,8 +190,9 @@ if __name__ == "__main__":
                 f"Created 'static' directory at {static_dir}. Please add a favicon.ico file to this directory."
             )
 
-        logger.info(f"Starting Flask app on {host}:{port}")
-        app.run(host=host, port=port, debug=True)
+        print(f"About to start Flask app on {host}:{port}")
+        app.run(host=host, port=port, debug=True)  # Enable debug mode
     except Exception as e:
+        print(f"Error starting Flask application: {e}")
         logger.critical(f"Failed to start the Flask application: {e}", exc_info=True)
         raise e
