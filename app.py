@@ -1,14 +1,15 @@
-print("Starting imports...")
+# app.py
+
 import os
 import logging
 import json_log_formatter
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from src.parsers.enhanced_parser import EnhancedParser
-
-print("Flask imported successfully")
-
 from dotenv import load_dotenv
 
+print("Starting imports...")
+
+print("Flask imported successfully")
 print("All imports completed")
 
 print("Initializing app...")
@@ -20,23 +21,37 @@ print(".env file loaded")
 app = Flask(__name__)
 print("Flask app created")
 
-parser = EnhancedParser()
-print("Parser payload initialized")
-
 # ----------------------------
 # Centralized Logging Setup
 # ----------------------------
 
 def create_logger():
-    logger = logging.getLogger(__name__)
-    json_handler = logging.StreamHandler()
+    logger = logging.getLogger("KeystoneEmailParser")
+    logger.setLevel(logging.DEBUG)  # Set to desired level
+
+    # Create JSON formatter
     formatter = json_log_formatter.JSONFormatter()
+
+    # Create StreamHandler with JSON formatter
+    json_handler = logging.StreamHandler()
     json_handler.setFormatter(formatter)
-    logger.addHandler(json_handler)
-    logger.setLevel(logging.DEBUG)
+
+    # Add handler to logger
+    if not logger.handlers:
+        logger.addHandler(json_handler)
+
     return logger
 
+# Initialize centralized logger
 app.logger = create_logger()
+app.logger.info("Logger initialized and configured.")
+
+# ----------------------------
+# Initialize EnhancedParser with centralized logger
+# ----------------------------
+
+parser = EnhancedParser(logger=app.logger)
+app.logger.info("EnhancedParser initialized with centralized logger.")
 
 # ----------------------------
 # Flask Routes
@@ -74,7 +89,7 @@ def parse_email_route():
     """
     try:
         email_content = request.form.get("email_content", "").strip()
-        
+
         if not email_content:
             app.logger.warning("Empty email content received.")
             return jsonify({"error_message": "Please provide the email content to parse."}), 400
@@ -131,8 +146,16 @@ if __name__ == "__main__":
                 f"Created 'static' directory at {static_dir}. Please add a favicon.ico file to this directory."
             )
 
+        # Ensure that the 'templates' directory exists
+        templates_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
+        if not os.path.exists(templates_dir):
+            os.makedirs(templates_dir)
+            app.logger.info(
+                f"Created 'templates' directory at {templates_dir}. Please add necessary HTML templates."
+            )
+
         print(f"About to start Flask app on {host}:{port}")
-        app.run(host=host, port=port, debug=True)  # Enable debug mode
+        app.run(host=host, port=port, debug=True)  # Enable debug mode for development
     except Exception as e:
         print(f"Error starting Flask application: {e}")
         app.logger.critical(f"Failed to start the Flask application: {e}", exc_info=True)

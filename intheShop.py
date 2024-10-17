@@ -20,8 +20,6 @@ from urllib.parse import urlparse
 from functools import lru_cache, wraps
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from src.parsers.archive.base_parser import BaseParser
-from src.parsers.rule_based_parser import RuleBasedParser
 from src.utils.validation import validate_json
 
 # Constants for logging messages

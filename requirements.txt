@@ -1,60 +1,28 @@
+# Web Framework
 Flask
-Flask-Login
-Flask-WTF
-Flask-Principal
-WTForms
 Werkzeug
-python-dotenv
 Jinja2
+python-dotenv
 
-spacy
-pandas
-mail-parser
-validators
-pyyaml
-
-jsonschema
-json-log-formatter
-
-requests
-
-tenacity
-filelock
-
-python-multipart
-
-bcrypt
-passlib[bcrypt]
-itsdangerous
-python-jose[cryptography]
-
-SQLAlchemy
-psycopg2-binary
-
-APScheduler
-
-nltk
-torch
+# Parsing and NLP
 transformers
-langchain
-spacy-transformers
-nuextract
+huggingface-hub
+thefuzz
+python-dateutil
+phonenumbers
 
-thefuzz  
+# Logging and Validation
+json-log-formatter
+jsonschema
 
-python-dateutil  
-
-phonenumbers  
-
+# Testing
 pytest
 pytest-mock
-unittest2
+
+# Code Quality
 flake8
 black
 isort
-flake8-black
-sphinx
 
-tqdm
-
-numpy
+# Documentation
+Sphinx
