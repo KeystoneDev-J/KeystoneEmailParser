@@ -1,7 +1,7 @@
 # src/email_parsing.py
 
-from src.parsers.parser_registry import ParserRegistry
-from src.parsers.parser_options import ParserOption
+from src.parsers.archive.parser_registry import ParserRegistry
+from src.parsers.archive.parser_options import ParserOption
 from src.utils.validation import validate_json
 
 

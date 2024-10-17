@@ -1,7 +1,7 @@
 # src/parsers/parser_registry.py
 
 from src.parsers.enhanced_parser import EnhancedParser
-from src.parsers.parser_options import ParserOption
+from src.parsers.archive.parser_options import ParserOption
 
 class ParserRegistry:
     _parsers = {}

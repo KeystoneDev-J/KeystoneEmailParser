@@ -22,7 +22,7 @@ from dateutil import parser as dateutil_parser
 from dateutil.parser import ParserError
 
 # Local application imports
-from src.parsers.base_parser import BaseParser
+from src.parsers.archive.base_parser import BaseParser
 from src.utils.validation import validate_json
 
 # Constants for repeated strings

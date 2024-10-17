@@ -9,8 +9,6 @@ from dateutil import parser as dateutil_parser
 import phonenumbers
 from phonenumbers import PhoneNumberFormat
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
-
-from src.parsers.base_parser import BaseParser
 from src.utils.validation import validate_json
 from src.utils.config_loader import ConfigLoader
 from src.utils.quickbase_schema import QUICKBASE_SCHEMA
@@ -24,7 +22,7 @@ class TimeoutException(Exception):
     pass
 
 
-class EnhancedParser(BaseParser):
+class EnhancedParser:
     """
     EnhancedParser class extends the BaseParser to implement advanced parsing techniques
     using various NLP models. It orchestrates the parsing stages and handles exceptions,
@@ -193,6 +191,8 @@ class EnhancedParser(BaseParser):
             )
             raise RuntimeError(f"Failed to load Validation Model: {e}") from e
 
+
+    @lru_cache(maxsize=100)
     def parse(self, email_content: str) -> Dict[str, Any]:
         """
         Orchestrates the parsing process by executing each parsing stage sequentially.

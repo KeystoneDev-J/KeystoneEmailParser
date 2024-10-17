@@ -15,7 +15,7 @@ from spacy.util import is_package
 from transformers import pipeline, AutoTokenizer, AutoModelForTokenClassification
 from thefuzz import fuzz  
 
-from src.parsers.base_parser import BaseParser
+from src.parsers.archive.base_parser import BaseParser
 from src.parsers.rule_based_parser import RuleBasedParser
 from src.utils.validation import validate_json
 
