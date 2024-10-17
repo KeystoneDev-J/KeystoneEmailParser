@@ -1,6 +1,7 @@
 import logging
 from typing import Optional, Dict, Any, List
 import os
+import re
 from transformers import pipeline
 from huggingface_hub import login
 from thefuzz import fuzz
@@ -8,7 +9,6 @@ from dateutil import parser as dateutil_parser
 import phonenumbers
 from phonenumbers import PhoneNumberFormat
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
-import sys
 
 from src.parsers.base_parser import BaseParser
 from src.utils.validation import validate_json
@@ -22,11 +22,6 @@ LLM_TIMEOUT_SECONDS = 500
 # Custom exception for handling timeouts
 class TimeoutException(Exception):
     pass
-
-
-# Handler function for timeouts
-def llm_timeout_handler():
-    raise TimeoutException("LLM processing timed out.")
 
 
 class EnhancedParser(BaseParser):
@@ -212,32 +207,40 @@ class EnhancedParser(BaseParser):
         parsed_data: Dict[str, Any] = {}
 
         try:
-            # Stage 1: NER Parsing
-            self.logger.info("Stage 1: NER Parsing.")
-            parsed_data.update(self._stage_ner_parsing(email_content))
+            # Stage 1: Regex Extraction
+            self.logger.info("Stage 1: Regex Extraction.")
+            regex_data = self.regex_extraction(email_content)
+            parsed_data.update(regex_data)
 
-            # Stage 2: Layout-Aware Parsing
-            self.logger.info("Stage 2: Layout-Aware Parsing.")
-            parsed_data.update(self._stage_layout_aware_parsing(email_content))
+            # Stage 2: NER Parsing
+            self.logger.info("Stage 2: NER Parsing.")
+            ner_data = self._stage_ner_parsing(email_content)
+            parsed_data = self.merge_parsed_data(parsed_data, ner_data)
 
-            # Stage 3: Sequence Model Parsing
-            self.logger.info("Stage 3: Sequence Model Parsing.")
-            parsed_data.update(self._stage_sequence_model_parsing(email_content))
+            # Stage 3: Layout-Aware Parsing
+            self.logger.info("Stage 3: Layout-Aware Parsing.")
+            layout_data = self._stage_layout_aware_parsing(email_content)
+            parsed_data = self.merge_parsed_data(parsed_data, layout_data)
 
-            # Stage 4: Validation Parsing
-            self.logger.info("Stage 4: Validation Parsing.")
+            # Stage 4: Sequence Model Parsing
+            self.logger.info("Stage 4: Sequence Model Parsing.")
+            sequence_data = self._stage_sequence_model_parsing(email_content)
+            parsed_data = self.merge_parsed_data(parsed_data, sequence_data)
+
+            # Stage 5: Validation Parsing
+            self.logger.info("Stage 5: Validation Parsing.")
             self._stage_validation(email_content, parsed_data)
 
-            # Stage 5: Schema Validation
-            self.logger.info("Stage 5: Schema Validation.")
+            # Stage 6: Schema Validation
+            self.logger.info("Stage 6: Schema Validation.")
             self._stage_schema_validation(parsed_data)
 
-            # Stage 6: Post Processing
-            self.logger.info("Stage 6: Post Processing.")
+            # Stage 7: Post Processing
+            self.logger.info("Stage 7: Post Processing.")
             parsed_data = self._stage_post_processing(parsed_data)
 
-            # Stage 7: JSON Validation
-            self.logger.info("Stage 7: JSON Validation.")
+            # Stage 8: JSON Validation
+            self.logger.info("Stage 8: JSON Validation.")
             self._stage_json_validation(parsed_data)
 
             self.logger.info("Parsing process completed successfully.")
@@ -249,6 +252,43 @@ class EnhancedParser(BaseParser):
         except Exception as e:
             self.logger.error(f"Unexpected error during parsing: {e}", exc_info=True)
             raise RuntimeError(f"Unexpected error during parsing: {e}") from e
+
+    def merge_parsed_data(
+        self, original_data: Dict[str, Any], new_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Merges new parsed data into the original data, combining lists and avoiding duplicates.
+
+        Args:
+            original_data (Dict[str, Any]): The original parsed data.
+            new_data (Dict[str, Any]): The new parsed data to merge.
+
+        Returns:
+            Dict[str, Any]: The merged parsed data.
+        """
+        for section, fields in new_data.items():
+            if section not in original_data:
+                original_data[section] = fields
+            else:
+                for field, value in fields.items():
+                    if field not in original_data[section]:
+                        original_data[section][field] = value
+                    else:
+                        if isinstance(
+                            original_data[section][field], list
+                        ) and isinstance(value, list):
+                            combined_list = original_data[section][field] + value
+                            # Remove duplicates while preserving order
+                            seen = set()
+                            original_data[section][field] = [
+                                x
+                                for x in combined_list
+                                if not (x in seen or seen.add(x))
+                            ]
+                        else:
+                            # Overwrite with the new value
+                            original_data[section][field] = value
+        return original_data
 
     def _stage_ner_parsing(self, email_content: str) -> Dict[str, Any]:
         """
@@ -351,44 +391,111 @@ class EnhancedParser(BaseParser):
             entities = self.ner_pipeline(email_content)
             extracted_entities: Dict[str, Any] = {}
 
-            # Process each recognized entity
+            # Map NER labels to schema fields
+            label_field_mapping = {
+                "PER": ("Insured Information", "Name"),
+                "ORG": ("Requesting Party", "Insurance Company"),
+                "LOC": ("Insured Information", "Loss Address"),
+                "MISC": ("Assignment Information", "Cause of loss"),
+                "DATE": ("Assignment Information", "Date of Loss/Occurrence"),
+                # Add custom labels if using a fine-tuned model
+                # 'POLICY_NUMBER': ('Adjuster Information', 'Policy #'),
+                # 'CLAIM_NUMBER': ('Requesting Party', 'Carrier Claim Number'),
+                # Add more mappings as needed
+            }
+
             for entity in entities:
                 label = entity.get("entity_group")
                 text = entity.get("word")
 
                 if label and text:
-                    label_lower = label.lower()
-                    self.logger.debug(f"Processing entity: {label} - {text}")
-
-                    # Map entities to the appropriate fields
-                    if label_lower == "per":
-                        # Assuming 'PER' labels correspond to names
-                        extracted_entities.setdefault(
-                            "Insured Information", {}
-                        ).setdefault("Name", []).append(text)
-                    elif label_lower == "org":
-                        # Assuming 'ORG' labels correspond to Insurance Company
-                        extracted_entities.setdefault(
-                            "Requesting Party", {}
-                        ).setdefault("Insurance Company", []).append(text)
-                    elif label_lower == "loc":
-                        # Assuming 'LOC' labels correspond to Loss Address
-                        extracted_entities.setdefault(
-                            "Insured Information", {}
-                        ).setdefault("Loss Address", []).append(text)
-                    elif label_lower == "date":
-                        extracted_entities.setdefault(
-                            "Assignment Information", {}
-                        ).setdefault("Date of Loss/Occurrence", []).append(text)
-                    elif label_lower == "email":
-                        extracted_entities.setdefault(
-                            "Adjuster Information", {}
-                        ).setdefault("Adjuster Email", []).append(text)
+                    mapping = label_field_mapping.get(label)
+                    if mapping:
+                        section, field = mapping
+                        extracted_entities.setdefault(section, {}).setdefault(
+                            field, []
+                        ).append(text.strip())
 
             self.logger.debug(f"NER Parsing Result: {extracted_entities}")
             return extracted_entities
         except Exception as e:
             self.logger.error(f"Error during NER parsing: {e}", exc_info=True)
+            return {}
+
+    def regex_extraction(self, email_content: str) -> Dict[str, Any]:
+        """
+        Performs regex-based extraction on the email content.
+
+        Args:
+            email_content (str): The email content to parse.
+
+        Returns:
+            Dict[str, Any]: Extracted data using regex patterns.
+        """
+        extracted_data = {}
+        try:
+            self.logger.debug("Starting regex extraction.")
+
+            # Patterns for extraction
+            patterns = {
+                "Policy #": r"Policy (?:Number|#):\s*(\S+)",
+                "Carrier Claim Number": r"Claim (?:Number|#):\s*(\S+)",
+                "Date of Loss/Occurrence": r"Date of Loss:\s*([^\n]+)",
+                "Adjuster Name": r"Your adjuster, (.+?) \(",
+                "Adjuster Email": r"Your adjuster, .+? \(([^)]+)\)",
+                "Adjuster Phone Number": r"Phone:\s*([\d-]+)",
+                "Public Adjuster": r"Best regards,\s*(.+?)\n",
+                "Public Adjuster Phone": r"Phone:\s*([\d-]+)",
+                "Public Adjuster Email": r"Email:\s*([^\s]+)",
+                "Name": r"Policyholder:\s*([^\n]+)",
+                "Loss Address": r"Property Address:\s*([^\n]+)",
+                "Cause of loss": r"Peril:\s*([^\n]+)",
+                "Loss Description": r"Claim Details:\s*\n(.*?)\n\n",
+                "Attachment(s)": r"Please find attached (.+?)\.",
+            }
+
+            for field, pattern in patterns.items():
+                matches = re.findall(pattern, email_content, re.DOTALL)
+                if matches:
+                    value = matches[0].strip()
+                    # Map the field to the appropriate section in your schema
+                    if field in [
+                        "Policy #",
+                        "Adjuster Name",
+                        "Adjuster Email",
+                        "Adjuster Phone Number",
+                    ]:
+                        section = "Adjuster Information"
+                    elif field in ["Carrier Claim Number"]:
+                        section = "Requesting Party"
+                    elif field in [
+                        "Public Adjuster",
+                        "Public Adjuster Phone",
+                        "Public Adjuster Email",
+                    ]:
+                        section = "Insured Information"
+                    elif field in ["Name", "Loss Address"]:
+                        section = "Insured Information"
+                    elif field in [
+                        "Date of Loss/Occurrence",
+                        "Cause of loss",
+                        "Loss Description",
+                    ]:
+                        section = "Assignment Information"
+                    elif field in ["Attachment(s)"]:
+                        section = "Assignment Information"
+                    else:
+                        section = "Additional Information"
+
+                    extracted_data.setdefault(section, {}).setdefault(field, []).append(
+                        value
+                    )
+                    self.logger.debug(f"Extracted {field}: {value}")
+
+            self.logger.debug(f"Regex Extraction Result: {extracted_data}")
+            return extracted_data
+        except Exception as e:
+            self.logger.error(f"Error during regex extraction: {e}", exc_info=True)
             return {}
 
     def layout_aware_parsing(self, email_content: str) -> Dict[str, Any]:
@@ -401,48 +508,8 @@ class EnhancedParser(BaseParser):
         Returns:
             Dict[str, Any]: Extracted layout-aware entities.
         """
-        try:
-            self.logger.debug("Starting Layout-Aware pipeline.")
-
-            # Split the email content into words
-            words = email_content.split()
-
-            # Create dummy bounding boxes (since we don't have actual layout data)
-            boxes = [[0, 0, 0, 0] for _ in words]
-
-            # Prepare inputs for the pipeline
-            inputs = {
-                "words": words,
-                "boxes": boxes,
-            }
-
-            entities = self.layoutlm_pipeline(**inputs)
-            extracted_layout: Dict[str, Any] = {}
-
-            # Process each recognized entity
-            for entity in entities:
-                label = entity.get("entity_group")
-                text = entity.get("word")
-
-                if label and text:
-                    label_lower = label.lower()
-                    self.logger.debug(f"Processing entity: {label} - {text}")
-
-                    # Map entities to the appropriate fields
-                    if label_lower in ["address", "location", "loc"]:
-                        extracted_layout.setdefault(
-                            "Insured Information", {}
-                        ).setdefault("Loss Address", []).append(text)
-                    elif label_lower in ["damage", "cost"]:
-                        extracted_layout.setdefault(
-                            "Assignment Information", {}
-                        ).setdefault("Loss Description", []).append(text)
-
-            self.logger.debug(f"Layout-Aware Parsing Result: {extracted_layout}")
-            return extracted_layout
-        except Exception as e:
-            self.logger.error(f"Error during Layout-Aware parsing: {e}", exc_info=True)
-            return {}
+        # Since we don't have actual layout information, we can skip or simplify this method.
+        return {}
 
     def sequence_model_extract(self, summary_text: str) -> Dict[str, Any]:
         """
@@ -491,69 +558,8 @@ class EnhancedParser(BaseParser):
             email_content (str): The original email content.
             parsed_data (Dict[str, Any]): The data parsed so far.
         """
-        try:
-            self.logger.debug("Starting validation parsing.")
-            # Prepare the prompt for the validation model
-            prompt = (
-                f"Validate the following extracted data against the original email content. "
-                f"Ensure all fields are consistent and complete.\n\n"
-                f"Email Content:\n{email_content}\n\n"
-                f"Extracted Data:\n{parsed_data}\n\n"
-                f"Provide a list of any missing or inconsistent fields."
-            )
-
-            with ThreadPoolExecutor(max_workers=1) as executor:
-                future = executor.submit(
-                    self.validation_pipeline,
-                    prompt,
-                    max_new_tokens=150,
-                    do_sample=False,
-                )
-                try:
-                    # Wait for the result with a timeout
-                    validation_response = future.result(timeout=LLM_TIMEOUT_SECONDS)
-                    validation_text = validation_response[0]["generated_text"]
-                    self.logger.debug(f"Validation Model Response: {validation_text}")
-
-                    # Parse the validation response
-                    issues = self.parse_validation_response(validation_text)
-                    if issues:
-                        parsed_data["validation_issues"] = issues
-                        self.logger.info(f"Validation issues found: {issues}")
-                except TimeoutError:
-                    self.logger.warning("Validation Model parsing timed out.")
-                except Exception as e:
-                    self.logger.error(
-                        f"Error during Validation Model parsing: {e}", exc_info=True
-                    )
-        except Exception as e:
-            self.logger.error(f"Error in validation_parsing: {e}", exc_info=True)
-
-    def parse_validation_response(self, validation_text: str) -> List[str]:
-        """
-        Parses the validation response text into a list of issues.
-
-        Args:
-            validation_text (str): The response from the validation model.
-
-        Returns:
-            List[str]: A list of validation issues.
-        """
-        issues = []
-        try:
-            lines = validation_text.strip().split("\n")
-            self.logger.debug("Parsing validation response.")
-
-            for line in lines:
-                if line.strip():
-                    issues.append(line.strip())
-                    self.logger.debug(f"Validation issue identified: {line.strip()}")
-
-            self.logger.debug(f"Validation Issues: {issues}")
-            return issues
-        except Exception as e:
-            self.logger.error(f"Error parsing validation response: {e}", exc_info=True)
-            return issues
+        # Implement validation logic if necessary
+        pass
 
     def _stage_schema_validation(self, parsed_data: Dict[str, Any]):
         """
@@ -656,23 +662,6 @@ class EnhancedParser(BaseParser):
                             self.logger.debug(
                                 f"Formatted phone number for {field} in {section}: {formatted_phone}"
                             )
-
-            # Handle TransformerEntities for additional data
-            transformer_entities = parsed_data.get("TransformerEntities", {})
-            for _, entities in transformer_entities.items():
-                for entity in entities:
-                    text = entity.get("text", "").strip()
-                    confidence = entity.get("confidence", 0.0)
-                    self.logger.debug(
-                        f"Processing TransformerEntity: {text} with confidence {confidence}"
-                    )
-                    if "policy" in text.lower():
-                        parsed_data.setdefault("Adjuster Information", {}).setdefault(
-                            "Policy #", []
-                        ).append(text)
-                        self.logger.debug(
-                            f"Added Policy # to Adjuster Information: {text}"
-                        )
 
             # Verify attachments if mentioned
             attachments = parsed_data.get("Assignment Information", {}).get(
