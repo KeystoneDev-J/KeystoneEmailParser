@@ -38,12 +38,13 @@ torch
 transformers
 langchain
 spacy-transformers
+nuextract
 
-thefuzz  # Added
+thefuzz  
 
-python-dateutil  # Added
+python-dateutil  
 
-phonenumbers  # Added
+phonenumbers  
 
 pytest
 pytest-mock

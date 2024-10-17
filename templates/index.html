@@ -1,52 +1,65 @@
-<!-- templates\index.html -->  
+<!-- templates/index.html -->
 
 <!doctype html>
 <html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="A demo application for parsing emails using various parser options.">
-    <meta name="keywords" content="Email Parser, Demo, JSON, PDF, CSV, LLM">
-    <meta name="author" content="Your Company Name">
+    <meta
+      name="description"
+      content="A demo application for parsing emails using various parser options."
+    />
+    <meta name="keywords" content="Email Parser, Demo, JSON, PDF, CSV, LLM" />
+    <meta name="author" content="Your Company Name" />
     <title>Email Parser Demo</title>
-    
+
     <!-- Preconnect to External Resources for Improved Performance -->
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
     <!-- Bootstrap CSS -->
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
       rel="stylesheet"
       crossorigin="anonymous"
     />
-    
+
     <!-- PrismJS CSS for Syntax Highlighting -->
     <link
       href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css"
       rel="stylesheet"
       crossorigin="anonymous"
     />
-    
+
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code&display=swap" rel="stylesheet">
-    
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code&display=swap"
+      rel="stylesheet"
+    />
+
     <!-- Custom Styles -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
-    
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/styles.css') }}"
+    />
+
     <!-- Lottie Animations -->
     <script
       src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"
       defer
       crossorigin="anonymous"
     ></script>
-    
+
     <!-- jsPDF Library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer crossorigin="anonymous"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+      defer
+      crossorigin="anonymous"
+    ></script>
   </head>
-  
+
   <body>
     <!-- Header -->
     <header>
@@ -100,38 +113,51 @@
               <h5 class="card__title mb-0">Input</h5>
             </header>
             <div class="card__body">
-              <form id="parserForm" method="POST" action="/parse_email" novalidate>
-                <!-- Template Selector -->
-                <div class="mb-3">
-                  <label for="template_selector" class="form-label">Select Template</label>
-                  <select
-                    class="form__select form-select"
-                    id="template_selector"
-                    aria-label="Select Email Template"
-                  >
-                    <option value="">Select a template...</option>
-                    <option value="meeting">Meeting Invitation</option>
-                    <option value="invoice">Invoice Email</option>
-                    <option value="shipping">Shipping Notification</option>
-                    <option value="claim">Insurance Claim</option>
-                  </select>
-                </div>
-                
+              <form
+                id="parserForm"
+                method="POST"
+                action="/parse_email"
+                novalidate
+              >
                 <!-- Sample Inputs Buttons -->
                 <div class="mb-3">
-                  <label class="form-label">Or load a sample email:</label>
+                  <label class="form-label">Load a sample email:</label>
                   <div>
-                    <button type="button" class="btn btn-sm btn-outline-primary me-2" data-template="claim" aria-label="Load Claim Email">Claim Email</button>
-                    <button type="button" class="btn btn-sm btn-outline-primary me-2" data-template="meeting" aria-label="Load Meeting Invitation">Meeting Invitation</button>
-                    <button type="button" class="btn btn-sm btn-outline-primary me-2" data-template="invoice" aria-label="Load Invoice Email">Invoice Email</button>
-                    <button type="button" class="btn btn-sm btn-outline-primary" data-template="shipping" aria-label="Load Shipping Notification">Shipping Notification</button>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-primary me-2"
+                      data-template="claim"
+                      aria-label="Load Formal Claim Email"
+                    >
+                      Formal Claim Email
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-primary me-2"
+                      data-template="informal_claim"
+                      aria-label="Load Informal Claim Email"
+                    >
+                      Informal Claim Email
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-primary me-2"
+                      data-template="formal_fire_claim"
+                      aria-label="Load Formal Fire Claim Email"
+                    >
+                      Formal Fire Claim Email
+                    </button>
                   </div>
                 </div>
-                
+
                 <!-- Email Content -->
                 <div class="mb-3 position-relative">
-                  <label for="email_content" class="form-label">Email Content</label>
-                  <small class="text-muted float-end" id="char_count">0 characters</small>
+                  <label for="email_content" class="form-label"
+                    >Email Content</label
+                  >
+                  <small class="text-muted float-end" id="char_count"
+                    >0 characters</small
+                  >
                   <textarea
                     class="form__textarea form-control"
                     id="email_content"
@@ -145,10 +171,12 @@
                     Please enter the email content to parse.
                   </div>
                 </div>
-                
+
                 <!-- Parser Option -->
                 <div class="mb-3">
-                  <label for="parser_option" class="form-label">Parser Option</label>
+                  <label for="parser_option" class="form-label"
+                    >Parser Option</label
+                  >
                   <select
                     class="form__select form-select"
                     id="parser_option"
@@ -157,25 +185,32 @@
                     aria-required="true"
                   >
                     <option value="">Select a parser option...</option>
-                    <option value="hybrid_parser" title="Combines rule-based and machine learning approaches for accurate parsing.">Hybrid Parser</option>
-                    <option value="rule_based" title="Uses predefined rules to parse email content.">Rule-Based Parser</option>
-                    <option value="local_llm" title="Leverages a local Language Model for parsing without external dependencies.">Local LLM Parser</option>
-                    <option value="llm" title="Utilizes OpenAI's Language Model for advanced parsing capabilities.">OpenAI LLM Parser</option>
+                    <option
+                      value="enhanced_parser"
+                      title="Uses the enhanced parsing strategy for best accuracy."
+                    >
+                      Enhanced Parser
+                    </option>
+                    <!-- Additional parser options can be added here in the future -->
                   </select>
                   <div class="invalid-feedback">
                     Please select a parser option.
                   </div>
                 </div>
-                
+
                 <!-- Submit Button -->
-                <button type="submit" class="btn--primary w-100" aria-label="Parse Email">
+                <button
+                  type="submit"
+                  class="btn--primary w-100"
+                  aria-label="Parse Email"
+                >
                   Parse Email
                 </button>
               </form>
             </div>
           </div>
         </section>
-        
+
         <!-- Parsed Data Section -->
         <section class="col-lg-6">
           <div class="card">
@@ -214,7 +249,7 @@
                   </button>
                 </li>
               </ul>
-              
+
               <div class="tab-content mt-3" id="parsedDataTabsContent">
                 <!-- JSON Output Tab -->
                 <div
@@ -223,14 +258,23 @@
                   role="tabpanel"
                   aria-labelledby="json-tab"
                 >
-                  <div id="parsedOutput" class="parsed-output position-relative">
-                    <button class="copy-button" id="copyResultsBtn" title="Copy results" aria-label="Copy Parsed Results" type="button">
+                  <div
+                    id="parsedOutput"
+                    class="parsed-output position-relative"
+                  >
+                    <button
+                      class="copy-button"
+                      id="copyResultsBtn"
+                      title="Copy results"
+                      aria-label="Copy Parsed Results"
+                      type="button"
+                    >
                       📋 Copy
                     </button>
                     <pre><code class="language-json" id="jsonOutput"></code></pre>
                   </div>
                 </div>
-                
+
                 <!-- Human-Readable Output Tab -->
                 <div
                   class="tab-pane fade"
@@ -241,7 +285,7 @@
                   <div id="humanOutput" class="parsed-human-readable"></div>
                 </div>
               </div>
-              
+
               <!-- Error and Success Messages -->
               <div
                 id="errorMessage"
@@ -259,7 +303,7 @@
               >
                 Parsed data copied to clipboard!
               </div>
-              
+
               <!-- Download Buttons -->
               <div class="mt-3 d-flex">
                 <button
@@ -284,16 +328,31 @@
     </main>
 
     <!-- Loading Overlay -->
-    <div class="loading-overlay d-none" role="alert" aria-live="assertive" aria-label="Loading">
-      <div id="lottie-container" class="loading-animation" aria-hidden="true"></div>
-      <div class="loading-overlay__message" id="loading-message">Loading...</div>
+    <div
+      class="loading-overlay d-none"
+      role="alert"
+      aria-live="assertive"
+      aria-label="Loading"
+    >
+      <div
+        id="lottie-container"
+        class="loading-animation"
+        aria-hidden="true"
+      ></div>
+      <div class="loading-overlay__message" id="loading-message">
+        Loading...
+      </div>
       <div class="loading-overlay__progress">
         <div class="loading-overlay__progress-bar" id="progress-bar"></div>
       </div>
     </div>
 
     <!-- Success Animation -->
-    <div class="success-animation d-none" id="success-animation" aria-hidden="true"></div>
+    <div
+      class="success-animation d-none"
+      id="success-animation"
+      aria-hidden="true"
+    ></div>
 
     <!-- Help Modal -->
     <div
@@ -306,7 +365,9 @@
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <header class="modal-header">
-            <h5 class="modal-title" id="helpModalLabel">How to Use Email Parser</h5>
+            <h5 class="modal-title" id="helpModalLabel">
+              How to Use Email Parser
+            </h5>
             <button
               type="button"
               class="btn-close"
@@ -318,25 +379,32 @@
             <p>Welcome to the Email Parser Demo! Here's how to get started:</p>
             <ol>
               <li>
-                <strong>Select a Template:</strong> Choose an email template from the dropdown to load predefined content.
+                <strong>Load a Sample Email:</strong> Use the buttons above to
+                load predefined email templates.
               </li>
               <li>
-                <strong>Load a Sample Email:</strong> Alternatively, load a sample claim-related email to see how parsing works.
+                <strong>Input Email Content:</strong> If you prefer, you can
+                manually enter or paste your email content into the textarea.
               </li>
               <li>
-                <strong>Input Email Content:</strong> If you prefer, you can manually enter or paste your email content into the textarea.
+                <strong>Select Parser Option:</strong> Choose the parsing method
+                that best suits your needs.
               </li>
               <li>
-                <strong>Select Parser Option:</strong> Choose the parsing method that best suits your needs.
+                <strong>Parse Email:</strong> Click the "Parse Email" button to
+                process your input.
               </li>
               <li>
-                <strong>Parse Email:</strong> Click the "Parse Email" button to process your input.
-              </li>
-              <li>
-                <strong>View Results:</strong> The parsed data will appear in the right section. You can switch between JSON and a human-readable format, copy the results, or download them as CSV/PDF.
+                <strong>View Results:</strong> The parsed data will appear in
+                the right section. You can switch between JSON and a
+                human-readable format, copy the results, or download them as
+                CSV/PDF.
               </li>
             </ol>
-            <p>If you encounter any issues, please refer to the FAQs or contact support.</p>
+            <p>
+              If you encounter any issues, please refer to the FAQs or contact
+              support.
+            </p>
           </div>
           <footer class="modal-footer">
             <button
@@ -365,15 +433,18 @@
       defer
       crossorigin="anonymous"
     ></script>
-    
+
     <!-- PrismJS for Syntax Highlighting -->
     <script
       src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"
       defer
       crossorigin="anonymous"
     ></script>
-    
+
     <!-- Custom Scripts -->
-    <script src="{{ url_for('static', filename='js/scripts.js') }}" defer></script>
+    <script
+      src="{{ url_for('static', filename='js/scripts.js') }}"
+      defer
+    ></script>
   </body>
 </html>

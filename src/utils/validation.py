@@ -99,22 +99,22 @@ assignment_schema = {
                 "items": {"type": "string"},
             },
         },
-        "TransformerEntities": {  # New Field Added
+        "TransformerEntities": {
             "type": "object",
             "additionalProperties": {
                 "type": "array",
                 "items": {"type": "string"},
             },
         },
-        "missing_fields": {  # Optional Fields for Parser Feedback
+        "missing_fields": {
             "type": "array",
             "items": {"type": "string"}
         },
-        "inconsistent_fields": {  # Optional Fields for Parser Feedback
+        "inconsistent_fields": {
             "type": "array",
             "items": {"type": "string"}
         },
-        "user_notifications": {  # Optional Field for Parser Feedback
+        "user_notifications": {
             "type": "string",
             "enum": ["Attachments mentioned but not found in the email."]
         },

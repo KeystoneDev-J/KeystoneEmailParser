@@ -1,4 +1,4 @@
-// static\js\scripts.js
+// static/js/scripts.js
 
 /* =========================================
    CONSTANTS & VARIABLES
@@ -24,68 +24,6 @@ const LOADING_MESSAGES = [
 
 // Email Templates
 const EMAIL_TEMPLATES = {
-  meeting: `Subject: Team Meeting - Project Update
-From: manager@company.com
-To: team@company.com
-Date: March 15, 2024
-
-Hi team,
-
-Let's meet to discuss the project progress. The meeting is scheduled for March 20, 2024 at 2:00 PM EST in Conference Room A.
-
-Agenda:
-1. Project timeline review
-2. Resource allocation
-3. Next steps
-
-Please confirm your attendance.
-
-Best regards,
-Manager`,
-  invoice: `Subject: Invoice #INV-2024-001
-From: billing@supplier.com
-To: accounts@company.com
-Date: March 16, 2024
-
-Dear Customer,
-
-Please find attached invoice #INV-2024-001 for recent services.
-
-Amount Due: $1,500.00
-Due Date: March 30, 2024
-
-Payment Details:
-Bank: FirstBank
-Account: 1234567890
-Reference: INV-2024-001
-
-Thank you for your business!
-
-Regards,
-Billing Team`,
-  shipping: `Subject: Your Order Has Shipped!
-From: orders@store.com
-To: customer@email.com
-Date: March 17, 2024
-
-Dear Customer,
-
-Your order #ORD123456 has shipped!
-
-Tracking Number: 1Z999AA1234567890
-Carrier: UPS
-Estimated Delivery: March 20, 2024
-
-Order Details:
-- Product A ($99.99)
-- Product B ($149.99)
-
-Track your package here: https://tracking.ups.com
-
-Thank you for shopping with us!
-
-Best regards,
-Store Team`,
   claim: `Subject: Insurance Claim Submission
 From: john.doe@example.com
 To: claims@insurancecompany.com
@@ -143,7 +81,113 @@ Please expedite the inspection process as repairs are urgently needed to prevent
 Thank you for your prompt attention to this matter.
 
 Sincerely,
-John Doe`,
+John Doe
+
+P.S. Does anyone know a good place for lunch near the office? I'm getting tired of the usual sandwich shop! 🥪😄`,
+  informal_claim: `Subject: Re: Claim #BX-20230722 - Flood damage at Johnson residence
+
+To: claims@insuranceco.com, field-team@insuranceco.com  
+CC: t.roberts@structuralexperts.com, mold-assessment@cleanair.org  
+BCC: legal@insuranceco.com
+
+Hey team,
+
+Just got back from the Johnson property - what a mess! 😱 You wouldn't believe the state of things. Anyway, here's the lowdown on claim #BX-20230722:
+
+So, Mrs. Emily Johnson (emilyjohnson@email.com, 555-867-5309) has been renting this place at 456 Maple Avenue, Riverside, CA 92501 for about 3 years now. The poor woman was out of town when that freak rainstorm hit on July 22nd (last Saturday). Her neighbor, Mr. Thompson, called her when he saw water pouring out from under her front door. Talk about a nasty surprise to come home to!
+
+I spoke with the property owner, Big City Rentals (contact: Sarah Lee, 555-123-4567), and they're insured under policy #BCR-2023-45678. They've already sent their maintenance guy, Joe, to start drying things out. He's set up some industrial fans, but honestly, I think we're looking at some serious remediation here.
+
+I did a walkthrough yesterday (July 25th) with our go-to public adjuster, Frank Martinez from "Fair Claim Settlements Inc." (frank.martinez@fairclaim.com). We're both concerned about potential mold issues, especially in the basement where the water was about 2 feet deep. 😬 The living room carpet is completely ruined, and there's visible water damage on the walls up to about 18 inches.
+
+Mrs. Johnson mentioned she's staying with her sister for now but is worried about her lease. I told her to document everything she's had to spend because of this - hotel, eating out, etc. Oh, and she's been trying to reach our claims hotline (800-555-9876) but keeps getting put on hold. Can someone look into that?
+
+I'm thinking we need to get Tom Roberts (CC'd) from Structural Experts to take a look ASAP. There's some worrying cracks in the foundation that might have been exacerbated by the flooding. Also, I've CC'd the mold assessment team because, well, better safe than sorry, right?
+
+Quick summary for the database (Jane, can you input this?):
+
+Claim handler: Yours truly, Alex Rodriguez (alex.r@insuranceco.com, 555-246-8101)  
+Type of loss: Flood damage (possibly some wind damage to roof as well)  
+Occupancy: Tenant-occupied  
+Someone home during incident: No  
+Current repair status: Initial drying in progress  
+Inspection type: Initial assessment complete, waiting on specialist inspections  
+I've uploaded some photos and videos to our shared drive. Fair warning: the basement shots are pretty grim.
+
+We should probably touch base with legal (BCC'd) about the lease situation. Also, heads up to the field team - the street is still partially flooded, so wear your waterproof boots if you're heading out there!
+
+Let me know if you need anything else. I'll be in the office tomorrow trying to make sense of all this!
+
+Cheers,  
+Alex
+
+P.S. Does anyone know a good place for lunch near the office? I'm getting tired of the usual sandwich shop! 🥪😄`,
+  formal_fire_claim: `Subject: Urgent: Fire Incident at 789 Pine Street - Claim #FI-20240815
+
+To: fire.claims@insuranceco.com, safety.team@insuranceco.com  
+CC: j.smith@fireexperts.com, l.brown@cleanupcrew.org  
+BCC: legal@insuranceco.com
+
+Dear Team,
+
+I hope this message finds you well, though I wish it were under better circumstances. I'm writing to report a fire incident that occurred at the property located at 789 Pine Street, Springfield, IL 62704, on August 15, 2024, around 3:45 PM.
+
+**Details of the Incident:**
+
+- **Insured Party:** Michael Thompson (michael.thompson@email.com, 555-321-6549)
+- **Property Owner:** Urban Realty LLC (contact: Linda Green, 555-654-3210)
+- **Policy Number:** FI-2024-89123
+- **Type of Loss:** Fire Damage
+- **Cause of Loss:** Electrical Fault in Kitchen Appliances
+- **Date of Loss/Occurrence:** August 15, 2024
+- **Residence Occupied During Loss:** Yes
+- **Was Someone Home at Time of Damage:** Yes
+- **Current Repair Status:** Fire department responded promptly; initial assessments completed. Awaiting structural evaluations.
+- **Inspection Type:** Preliminary fire damage assessment conducted by Fire Experts Inc.
+  
+**Additional Information:**
+
+- **Loss Description:** The kitchen experienced a significant electrical fire due to faulty wiring in the refrigerator and microwave. Smoke has permeated the living areas, and there's extensive damage to the kitchen and adjacent rooms.
+- **Public Adjuster:** Rebecca Lee from "Reliable Claims Adjusters" (rebecca.lee@reliableclaims.com)
+- **Repair or Mitigation Progress:** Temporary measures in place to prevent further damage. Scheduled for comprehensive repairs pending insurance approval.
+  
+**Attachments:**
+
+- Photos of the fire damage
+- Fire department incident report
+- Initial repair estimates
+
+**Action Items:**
+
+1. **Structural Assessment:** Please coordinate with our structural engineers to evaluate the integrity of the building.
+2. **Mold Inspection:** Due to smoke and water damage, a mold inspection is necessary to ensure air quality safety.
+3. **Legal Consultation:** Liaise with our legal team regarding tenant agreements and potential liability concerns.
+4. **Cleanup Coordination:** Arrange for immediate cleanup to salvage undamaged property and prevent further deterioration.
+
+**Contact Information:**
+
+- **Claim Handler:** Sarah Connor (sarah.connor@insuranceco.com, 555-789-1234)
+- **Adjuster:** Tom Hanks (tom.hanks@insuranceco.com, 555-987-6543)
+- **Safety Officer:** Mark Spencer (mark.spencer@safetyteam.com, 555-456-7890)
+
+**Notes:**
+
+- Tenant Michael Thompson is cooperating fully and has relocated temporarily to avoid health hazards.
+- The fire was contained swiftly, but the extent of the damage requires a thorough investigation and repair plan.
+  
+**Next Steps:**
+
+Please review the attached documents and initiate the necessary inspections and assessments. Time is of the essence to mitigate further damage and expedite the repair process.
+
+Let me know if you need any additional information or assistance coordinating the above tasks.
+
+**Best Regards,**
+
+Jessica Martin  
+Claims Supervisor  
+ABC Insurance Co.  
+jessica.martin@insuranceco.com  
+555-654-9870`,
 };
 
 /* =========================================
@@ -174,8 +218,6 @@ const domCache = {
   lottieContainer: document.getElementById("lottie-container"),
   successAnimationContainer: document.getElementById("success-animation"),
   parserForm: document.getElementById("parserForm"),
-  templateSelector: document.getElementById("template_selector"),
-  sampleButtons: document.querySelectorAll("[data-template]"),
   emailContent: document.getElementById("email_content"),
   charCount: document.getElementById("char_count"),
   themeToggle: document.getElementById("theme-toggle-btn"),
@@ -242,10 +284,6 @@ function initializeEventListeners() {
     domCache.parserForm.addEventListener("submit", handleFormSubmission);
   }
 
-  if (domCache.templateSelector) {
-    domCache.templateSelector.addEventListener("change", loadTemplate);
-  }
-
   if (domCache.sampleButtons) {
     domCache.sampleButtons.forEach((button) => {
       button.addEventListener("click", () => {
@@ -256,7 +294,10 @@ function initializeEventListeners() {
   }
 
   if (domCache.emailContent) {
-    domCache.emailContent.addEventListener("input", debounce(updateCharCount, 300));
+    domCache.emailContent.addEventListener(
+      "input",
+      debounce(updateCharCount, 300)
+    );
   }
 
   if (domCache.themeToggle) {
@@ -269,10 +310,6 @@ function initializeEventListeners() {
 
   if (domCache.downloadPdfBtn) {
     domCache.downloadPdfBtn.addEventListener("click", downloadPDF);
-  }
-
-  if (domCache.parserOption) {
-    domCache.parserOption.addEventListener("change", validateFormInputs);
   }
 
   if (domCache.copyResultsBtn) {
@@ -294,7 +331,9 @@ function initializeTheme() {
  * Initializes Bootstrap Tooltips
  */
 function initializeTooltips() {
-  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+  const tooltipTriggerList = [].slice.call(
+    document.querySelectorAll("[title]")
+  );
   tooltipTriggerList.forEach((tooltipTriggerEl) => {
     new bootstrap.Tooltip(tooltipTriggerEl);
   });
@@ -320,18 +359,8 @@ function updateThemeIcon() {
 }
 
 /**
- * Loads the selected email template into the textarea
- */
-function loadTemplate() {
-  if (domCache.templateSelector && domCache.emailContent) {
-    domCache.emailContent.value = EMAIL_TEMPLATES[domCache.templateSelector.value] || "";
-    updateCharCount();
-  }
-}
-
-/**
  * Loads a sample email based on the provided template name
- * @param {string} templateName 
+ * @param {string} templateName
  */
 function loadSampleEmail(templateName) {
   if (EMAIL_TEMPLATES[templateName]) {
@@ -346,7 +375,7 @@ function loadSampleEmail(templateName) {
 function updateCharCount() {
   if (domCache.emailContent && domCache.charCount) {
     const count = domCache.emailContent.value.length;
-    domCache.charCount.textContent = `${count} character${count !== 1 ? 's' : ''}`;
+    domCache.charCount.textContent = `${count} character${count !== 1 ? "s" : ""}`;
     domCache.charCount.className = count > 5000 ? "text-danger" : "text-muted";
   }
 }
@@ -355,7 +384,11 @@ function updateCharCount() {
  * Displays the loading overlay with animations
  */
 function showLoadingOverlay() {
-  if (domCache.loadingOverlay && domCache.loadingMessage && domCache.progressBar) {
+  if (
+    domCache.loadingOverlay &&
+    domCache.loadingMessage &&
+    domCache.progressBar
+  ) {
     domCache.loadingOverlay.classList.remove("d-none");
     if (loadingAnimation) loadingAnimation.play();
 
@@ -398,7 +431,8 @@ function updateLoadingMessage() {
     domCache.loadingMessage.classList.remove("visible");
 
     setTimeout(() => {
-      domCache.loadingMessage.textContent = LOADING_MESSAGES[currentMessageIndex];
+      domCache.loadingMessage.textContent =
+        LOADING_MESSAGES[currentMessageIndex];
       domCache.loadingMessage.classList.add("visible");
     }, 300);
   }
@@ -423,7 +457,7 @@ function copyResults() {
 
 /**
  * Shows a success message to the user
- * @param {string} message 
+ * @param {string} message
  */
 function showSuccessMessage(message) {
   if (domCache.successMessage) {
@@ -437,7 +471,7 @@ function showSuccessMessage(message) {
 
 /**
  * Shows an error message to the user
- * @param {string} message 
+ * @param {string} message
  */
 function showErrorMessage(message) {
   if (domCache.errorMessage) {
@@ -456,9 +490,13 @@ function playSuccessAnimation() {
   if (domCache.successAnimationContainer && successAnimation) {
     domCache.successAnimationContainer.classList.remove("d-none");
     successAnimation.goToAndPlay(0);
-    successAnimation.addEventListener("complete", () => {
-      domCache.successAnimationContainer.classList.add("d-none");
-    }, { once: true });
+    successAnimation.addEventListener(
+      "complete",
+      () => {
+        domCache.successAnimationContainer.classList.add("d-none");
+      },
+      { once: true }
+    );
   }
 }
 
@@ -474,15 +512,17 @@ function downloadCSV() {
   const headers = Object.keys(parsedEntries[parsedEntries.length - 1]);
   const csvContent = [
     headers.join(","),
-    ...parsedEntries.map(entry =>
-      headers.map(header => {
-        let cell = entry[header];
-        if (typeof cell === "object" && cell !== null) {
-          cell = JSON.stringify(cell);
-        }
-        cell = String(cell).replace(/"/g, '""');
-        return /[",\n]/.test(cell) ? `"${cell}"` : cell;
-      }).join(",")
+    ...parsedEntries.map((entry) =>
+      headers
+        .map((header) => {
+          let cell = entry[header];
+          if (typeof cell === "object" && cell !== null) {
+            cell = JSON.stringify(cell);
+          }
+          cell = String(cell).replace(/"/g, '""');
+          return /[",\n]/.test(cell) ? `"${cell}"` : cell;
+        })
+        .join(",")
     ),
   ].join("\n");
 
@@ -490,7 +530,10 @@ function downloadCSV() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.setAttribute("href", url);
-  const timestamp = new Date().toISOString().replace(/[:\-T.]/g, "").split("Z")[0];
+  const timestamp = new Date()
+    .toISOString()
+    .replace(/[:\-T.]/g, "")
+    .split("Z")[0];
   link.setAttribute("download", `parsed_emails_${timestamp}.csv`);
   link.style.visibility = "hidden";
   document.body.appendChild(link);
@@ -524,7 +567,11 @@ async function downloadPDF() {
 
   // Add JSON data
   doc.setFontSize(12);
-  const jsonString = JSON.stringify(parsedEntries[parsedEntries.length - 1], null, 2);
+  const jsonString = JSON.stringify(
+    parsedEntries[parsedEntries.length - 1],
+    null,
+    2
+  );
   const lines = doc.splitTextToSize(jsonString, 180);
   doc.text(lines, 10, 20);
 
@@ -537,7 +584,7 @@ async function downloadPDF() {
 
 /**
  * Displays the parsed data in both JSON and Human-Readable formats
- * @param {Object} parsedData 
+ * @param {Object} parsedData
  */
 function displayParsedData(parsedData) {
   if (domCache.jsonOutput) {
@@ -560,7 +607,7 @@ function displayParsedData(parsedData) {
 
 /**
  * Flattens nested parsed data for CSV export
- * @param {Object} data 
+ * @param {Object} data
  * @returns {Object}
  */
 function flattenParsedData(data) {
@@ -568,7 +615,9 @@ function flattenParsedData(data) {
   for (const [section, content] of Object.entries(data)) {
     if (typeof content === "object" && content !== null) {
       for (const [key, value] of Object.entries(content)) {
-        flatData[`${capitalizeFirstLetter(section)} - ${capitalizeFirstLetter(key)}`] = value;
+        flatData[
+          `${capitalizeFirstLetter(section)} - ${capitalizeFirstLetter(key)}`
+        ] = value;
       }
     } else {
       flatData[capitalizeFirstLetter(section)] = content;
@@ -579,22 +628,24 @@ function flattenParsedData(data) {
 
 /**
  * Renders the parsed data in a human-readable accordion format
- * @param {Object} data 
+ * @param {Object} data
  * @returns {string}
  */
 function renderHumanReadable(data) {
-  let htmlContent = "<div class='human-readable-container'><div class='accordion' id='parsedDataAccordion'>";
+  let htmlContent =
+    "<div class='human-readable-container'><div class='accordion' id='parsedDataAccordion'>";
   let sectionIndex = 0;
   for (const [section, content] of Object.entries(data)) {
+    if (section === "validation_issues") continue; // Skip validation issues for human-readable output
     const collapseId = `collapseSection${sectionIndex}`;
     htmlContent += `
       <div class="accordion-item">
         <h2 class="accordion-header" id="heading${sectionIndex}">
-          <button class="accordion-button ${sectionIndex !== 0 ? 'collapsed' : ''}" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="${sectionIndex === 0 ? 'true' : 'false'}" aria-controls="${collapseId}">
+          <button class="accordion-button ${sectionIndex !== 0 ? "collapsed" : ""}" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="${sectionIndex === 0 ? "true" : "false"}" aria-controls="${collapseId}">
             ${capitalizeFirstLetter(section)}
           </button>
         </h2>
-        <div id="${collapseId}" class="accordion-collapse collapse ${sectionIndex === 0 ? 'show' : ''}" aria-labelledby="heading${sectionIndex}" data-bs-parent="#parsedDataAccordion">
+        <div id="${collapseId}" class="accordion-collapse collapse ${sectionIndex === 0 ? "show" : ""}" aria-labelledby="heading${sectionIndex}" data-bs-parent="#parsedDataAccordion">
           <div class="accordion-body">
     `;
     if (typeof content === "object" && content !== null) {
@@ -619,7 +670,7 @@ function renderHumanReadable(data) {
 
 /**
  * Capitalizes the first letter of a string
- * @param {string} string 
+ * @param {string} string
  * @returns {string}
  */
 function capitalizeFirstLetter(string) {
@@ -628,23 +679,25 @@ function capitalizeFirstLetter(string) {
 
 /**
  * Escapes HTML characters to prevent XSS
- * @param {string} text 
+ * @param {string} text
  * @returns {string}
  */
 function escapeHtml(text) {
   const map = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;',
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;",
   };
-  return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
+  return String(text).replace(/[&<>"']/g, function (m) {
+    return map[m];
+  });
 }
 
 /**
  * Handles the form submission for parsing emails
- * @param {Event} e 
+ * @param {Event} e
  */
 async function handleFormSubmission(e) {
   e.preventDefault();
@@ -685,7 +738,9 @@ async function handleFormSubmission(e) {
     if (contentType && contentType.includes("application/json")) {
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error_message || "An error occurred while parsing.");
+        throw new Error(
+          data.error_message || "An error occurred while parsing."
+        );
       }
       displayParsedData(data);
       showSuccessMessage("Email parsed successfully!");
@@ -703,8 +758,8 @@ async function handleFormSubmission(e) {
 
 /**
  * Toggles the invalid state of a form input
- * @param {HTMLElement} element 
- * @param {boolean} isInvalid 
+ * @param {HTMLElement} element
+ * @param {boolean} isInvalid
  */
 function toggleInvalidState(element, isInvalid) {
   if (element) {
@@ -752,13 +807,13 @@ function hideDownloadButtons() {
 
 /**
  * Debounce function to limit how often a function can fire.
- * @param {Function} func 
- * @param {number} wait 
+ * @param {Function} func
+ * @param {number} wait
  * @returns {Function}
  */
 function debounce(func, wait) {
   let timeout;
-  return function(...args) {
+  return function (...args) {
     const later = () => {
       clearTimeout(timeout);
       func.apply(this, args);
@@ -767,3 +822,16 @@ function debounce(func, wait) {
     timeout = setTimeout(later, wait);
   };
 }
+
+/* =========================================
+   UTILITY FUNCTIONS
+========================================= */
+
+/**
+ * Removes the dropdown for template selection and relies solely on buttons
+ * Adjusted in HTML below.
+ */
+
+/* =========================================
+   Additional Utility Functions
+========================================= */
